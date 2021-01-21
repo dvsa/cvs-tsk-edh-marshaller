@@ -2,21 +2,24 @@
   "name": "cvs-tsk-edh-marshaller",
   "version": "0.0.1",
   "description": "Receives DynamoDB Streams destined for EDH and parcels them out to their respective SQS queues",
-  "main": "handler.js",
+  "main": "src/handler.js",
+  "engines": {
+    "node": ">10"
+  },
   "scripts": {
-    "start": "node_modules/serverless/bin/serverless invoke local -f main --path tests/resources/stream-event.json",
+    "start": "serverless invoke local -f main --path tests/resources/stream-event.json",
     "start:docker": "docker-compose -f docker-compose.yml up -d",
-    "build": "node_modules/typescript/bin/tsc --rootDir ./ --outDir .build --sourceMap false && npm run build:copy",
-    "build:dev": "node_modules/typescript/bin/tsc && npm run build:copy",
+    "build": "tsc --rootDir ./ --outDir .build --sourceMap false && npm run build:copy",
+    "build:dev": "tsc && npm run build:copy",
     "build:copy": "find src -type f \\( -name \"*.yml\" -or -name \"*.json\" \\) | cpio -pdm .build && find tests -type f \\( -name \"*.yml\" -or -name \"*.json\" \\)  | cpio -pdm .build",
     "build:docker": "docker-compose -f docker-compose.yml up -d --build",
-    "test": "BRANCH=local SLS_DEBUG=* AWS_XRAY_CONTEXT_MISSING=LOG_ERROR jest --testMatch=\"**/*.unitTest.ts\" --coverage",
+    "test": "BRANCH=local SLS_DEBUG=* AWS_XRAY_CONTEXT_MISSING=LOG_ERROR jest --testMatch=\"**/*.unitTest.ts\"",
     "test-i": "BRANCH=local jest --testMatch=\"**/*.intTest.ts\" --runInBand --passWithNoTests",
     "tslint": "eslint .",
     "sonar-scanner": "npm run tslint && npm run coverage && sonar-scanner",
-    "prepush": "npm test && npm run tslint",
+    "prepush": "npm run coverage",
     "security-checks": "git secrets --scan && git log -p | scanrepo",
-    "coverage": "BRANCH=local SLS_DEBUG=* jest --testMatch=\"**/*.*Test.ts\" --coverage",
+    "coverage": "npm t -- --coverage",
     "audit-dep": "npm audit",
     "package": "mkdir ${ZIP_NAME} && cp package.json package-lock.json ${ZIP_NAME}/ && cp -r .build/src/* ${ZIP_NAME}/ && cd ${ZIP_NAME} && npm ci --production && rm package.json package-lock.json && zip -qr ../${ZIP_NAME}.zip .",
     "tools-setup": "echo \"Nothing To Do\""
@@ -61,7 +64,7 @@
     "jest": "^24.9.0",
     "jest-plugin-context": "^2.9.0",
     "jest-sonar-reporter": "^2.0.0",
-    "serverless": "^1.56.1",
+    "serverless": "^2.20.0",
     "serverless-plugin-tracing": "^2.0.0",
     "serverless-plugin-typescript": "^1.1.9",
     "ts-jest": "^24.1.0",
@@ -81,7 +84,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run prepush && npm run security-checks",
+      "pre-commit": "npm run security-checks && npm run tslint && npm run build",
       "pre-push": "npm run prepush"
     }
   }
