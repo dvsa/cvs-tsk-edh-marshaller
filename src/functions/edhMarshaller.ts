@@ -32,7 +32,7 @@ const edhMarshaller: Handler = async (event: GetRecordsOutput, context?: Context
 
     records.forEach((record: StreamRecord) => {
         debugOnlyLog("Record: ", record);
-        debugOnlyLog("New image: ", record.dynamodb?.NewImage)
+        debugOnlyLog("New image: ", record.dynamodb?.NewImage);
         const targetQueue = getTargetQueueFromSourceARN(record.eventSourceARN);
         debugOnlyLog("Target Queue", targetQueue);
         const eventType = record.eventName; //INSERT, MODIFY or REMOVE
@@ -49,9 +49,8 @@ const edhMarshaller: Handler = async (event: GetRecordsOutput, context?: Context
         console.error(error);
         console.log("records");
         console.log(records);
-        if(error.code !== "InvalidParameterValue"){
-            throw error;
-        }
+        // Lambda will retry up to X times or until the message expires, after which the message will be sent to the dlq.
+        throw error;
     });
 };
 

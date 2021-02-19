@@ -1,5 +1,4 @@
 import {edhMarshaller} from "../../src/functions/edhMarshaller";
-import mockContext from "aws-lambda-mock-context";
 import {SQService} from "../../src/services/SQService";
 import {Configuration} from "../../src/utils/Configuration";
 import {Context} from "aws-lambda";
