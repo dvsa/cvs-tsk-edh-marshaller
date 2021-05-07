@@ -1,71 +1,56 @@
-import {edhMarshaller} from "../../src/functions/edhMarshaller";
-import mockContext from "aws-lambda-mock-context";
-import {SQService} from "../../src/services/SQService";
-import {Configuration} from "../../src/utils/Configuration";
-import {Context} from "aws-lambda";
+import { Context } from 'aws-lambda';
+import { SqsService } from '../../src/utils/sqs-huge-msg';
+import { SQService } from '../../src/services/SQService';
+import { edhMarshaller } from '../../src/functions/edhMarshaller';
 
-describe("edhMarshaller Function", () => {
-  // @ts-ignore
-  const ctx: Context = null;
-  // @ts-ignore
-  Configuration.instance = new Configuration("../../src/config/config.yml");
-  afterAll(() => {
-    jest.restoreAllMocks();
-    jest.resetModuleRegistry();
+jest.mock('../../src/utils/sqs-huge-msg');
+jest.mock('../../src/services/SQService');
+
+describe('EDH Marshaller', () => {
+  it('returns undefined when there is no event', async () => {
+    expect.assertions(1);
+    const result = await edhMarshaller(undefined, null as unknown as Context, () => { });
+    expect(result).toBe(undefined);
   });
 
-  describe("if the event is undefined", () => {
-    it("should return undefined", async () => {
-      expect.assertions(1);
-      const result = await edhMarshaller(undefined, ctx, () => { return; });
-      expect(result).toBe(undefined);
-    });
+  it('returns undefined when three are no records in the event', async () => {
+    expect.assertions(1);
+    const result = await edhMarshaller({ something: 'not records' }, null as unknown as Context, () => { });
+    expect(result).toBe(undefined);
   });
 
-  describe("if the event has no records", () => {
-    it("should return undefined", async () => {
-      expect.assertions(1);
-      const result = await edhMarshaller({something: "not records"}, ctx, () => { return; });
-      expect(result).toBe(undefined);
-    });
-  });
-
-  describe("with good event", () => {
+  it('should send a message with a good event', async () => {
     const event = {
       Records: [{
-        "eventSourceARN":"test-results",
-        "eventName":"INSERT",
-        "dynamodb":{
-          "some": "thing"
-        }
-      }]
+        eventSourceARN: 'test-results',
+        eventName: 'INSERT',
+        dynamodb: {
+          some: 'thing',
+        },
+      }],
     };
-    it("should invoke SQS service with correct params", async () => {
-      const sendMessageMock = jest.fn().mockResolvedValue("howdy");
-      jest.spyOn(SQService.prototype, "sendMessage").mockImplementation(sendMessageMock);
 
-      await edhMarshaller(event, ctx, () => { return; });
-      expect(sendMessageMock).toHaveBeenCalledWith(
-        JSON.stringify({
-          eventSourceARN: "test-results",
-          eventName:"INSERT",
-          dynamodb: {"some":"thing"},
-        }),
-        "cvs-edh-dispatcher-test-results-local-queue"
-      );
-      expect(sendMessageMock).toHaveBeenCalledTimes(1);
-    });
+    const sendMessageMock = jest.fn().mockResolvedValue('howdy');
+    jest.spyOn(SQService.prototype, 'sendMessage').mockImplementation(sendMessageMock);
 
-    describe("when SQService throws an error", () => {
-      it("should throw the error up", async () => {
-        jest.spyOn(SQService.prototype, "sendMessage").mockRejectedValue("It broke");
+    const response = await edhMarshaller(event, null as unknown as Context, () => { });
 
-        try {
-          await edhMarshaller(event, ctx, () => { return; });
-        } catch (e) {
-          expect(e).toEqual("It broke");
-        }
-      });
-    })
+    expect(response).toEqual(['howdy']);
+  });
+
+  it('should throw if the SqService throws an error', async () => {
+    const event = {
+      Records: [{
+        eventSourceARN: 'test-results',
+        eventName: 'INSERT',
+        dynamodb: {
+          some: 'thing',
+        },
+      }],
+    };
+
+    jest.spyOn(SQService.prototype, 'sendMessage').mockRejectedValue(new Error());
+
+    await expect(edhMarshaller(event, null as unknown as Context, () => { })).rejects.toThrow();
   });
 });

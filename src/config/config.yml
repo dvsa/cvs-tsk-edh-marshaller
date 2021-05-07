@@ -12,6 +12,10 @@ sqs:
       apiVersion: "2012-11-05"
     queueName:
       - cvs-edh-test-results-${BRANCH}-queue
+s3:
+  remote:
+    params:
+      endpoint: https://s3.${AWS_REGION}.amazonaws.com
 
 targets:
   test-results:

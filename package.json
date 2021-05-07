@@ -10,13 +10,13 @@
     "build:dev": "node_modules/typescript/bin/tsc && npm run build:copy",
     "build:copy": "find src -type f \\( -name \"*.yml\" -or -name \"*.json\" \\) | cpio -pdm .build && find tests -type f \\( -name \"*.yml\" -or -name \"*.json\" \\)  | cpio -pdm .build",
     "build:docker": "docker-compose -f docker-compose.yml up -d --build",
-    "test": "BRANCH=local SLS_DEBUG=* AWS_XRAY_CONTEXT_MISSING=LOG_ERROR jest --testMatch=\"**/*.unitTest.ts\" --coverage",
-    "test-i": "BRANCH=local jest --testMatch=\"**/*.intTest.ts\" --runInBand --passWithNoTests",
+    "test": "cross-env AWS_REGION=local BRANCH=local SLS_DEBUG=* AWS_XRAY_CONTEXT_MISSING=LOG_ERROR jest --testMatch=\"**/*.unitTest.ts\" --coverage",
+    "test-i": "cross-env AWS_REGION=local BRANCH=local jest --testMatch=\"**/*.intTest.ts\" --runInBand --passWithNoTests",
     "tslint": "eslint .",
     "sonar-scanner": "npm run tslint && npm run coverage && sonar-scanner",
     "prepush": "npm test && npm run tslint",
     "security-checks": "git secrets --scan && git log -p | scanrepo",
-    "coverage": "BRANCH=local SLS_DEBUG=* jest --testMatch=\"**/*.*Test.ts\" --coverage",
+    "coverage": "cross-env BRANCH=local SLS_DEBUG=* jest --testMatch=\"**/*.*Test.ts\" --coverage",
     "audit-dep": "npm audit",
     "package": "mkdir ${ZIP_NAME} && cp package.json package-lock.json ${ZIP_NAME}/ && cp -r .build/src/* ${ZIP_NAME}/ && cd ${ZIP_NAME} && npm ci --production && rm package.json package-lock.json && zip -qr ../${ZIP_NAME}.zip .",
     "tools-setup": "echo \"Nothing To Do\""
@@ -47,7 +47,8 @@
     "aws-sdk": "^2.652.0",
     "aws-xray-sdk": "^2.4.0",
     "node-yaml": "^3.2.0",
-    "reflect-metadata": "^0.1.13"
+    "reflect-metadata": "^0.1.13",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@dvsa/eslint-config-ts": "^1.0.0",
@@ -55,7 +56,9 @@
     "@types/jest": "^24.0.21",
     "@types/jest-plugin-context": "^2.9.2",
     "@types/node": "^10.17.3",
+    "@types/uuid": "^8.3.0",
     "aws-lambda-mock-context": "^3.2.1",
+    "cross-env": "^7.0.3",
     "eslint": "^6.8.0",
     "husky": "^3.0.9",
     "jest": "^24.9.0",
