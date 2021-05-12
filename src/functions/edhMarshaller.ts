@@ -44,7 +44,7 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent, context?: Cont
     region,
     queueName: config.queueName,
     s3EndpointUrl: config.s3.remote.params.endpoint,
-    s3Bucket: 'BUCKET_NAME',
+    s3Bucket: config.s3.remote.params.bucket,
   });
   const sqService: SQService = new SQService(sqsHugeMessage);
   // const sendMessagePromises: Array<Promise<PromiseResult<SendMessageResult, AWSError>>> = [];

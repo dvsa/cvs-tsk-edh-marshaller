@@ -10,6 +10,7 @@ sqs:
     params:
       region: "eu-west-1"
       apiVersion: "2012-11-05"
+      bucket: cvs-sqs-queues-${BRANCH}
     queueName:
       - cvs-edh-test-results-${BRANCH}-queue
 s3:
