@@ -19,7 +19,7 @@ function filterRecordsWithoutEventSourceARN(record: DynamoDBRecord): record is D
  * @param context - λ Context
  * @param callback - callback function
  */
-const edhMarshaller: Handler = async (event: DynamoDBStreamEvent, context?: Context, callback?: Callback): Promise<void|Array<PromiseResult<SendMessageResult, AWSError>>> => {
+const edhMarshaller: Handler = async (event: DynamoDBStreamEvent, context?: Context, callback?: Callback): Promise<void|Array<void|PromiseResult<SendMessageResult, AWSError>>> => {
   if (!event) {
     console.error('ERROR: event is not defined.');
     return;
@@ -52,7 +52,7 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent, context?: Cont
   const filteredRecords = records.filter(filterRecordsWithoutEventSourceARN);
 
   // for (const record of filteredRecords) {
-  const sendMessagePromises = filteredRecords.map((record): Promise<PromiseResult<SendMessageResult, AWSError>> => {
+  const sendMessagePromises = filteredRecords.map((record): Promise<void|PromiseResult<SendMessageResult, AWSError>> => {
     debugOnlyLog('Record: ', record);
     debugOnlyLog('New image: ', record.dynamodb?.NewImage);
 
