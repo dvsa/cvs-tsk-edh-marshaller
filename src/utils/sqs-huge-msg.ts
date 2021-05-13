@@ -3,6 +3,10 @@ import * as AWS from 'aws-sdk';
 import { PromiseResult } from 'aws-sdk/lib/request';
 import { v4 as uuid } from 'uuid';
 
+// const AWSXRay = require('aws-xray-sdk');
+import AWSXRay from 'aws-xray-sdk';
+import { MessageBodyAttributeMap } from 'aws-sdk/clients/sqs';
+
 export interface SqsServiceOptions {
   endpoint?: string;
   region: string;
@@ -28,6 +32,8 @@ export class SqsService {
 
   private s3Bucket: string;
 
+  private sqsInstance: AWS.SQS|undefined;
+
   constructor(options: SqsServiceOptions) {
     this.endpoint = options.endpoint;
     this.region = options.region;
@@ -38,6 +44,10 @@ export class SqsService {
   }
 
   private getInstance(): AWS.SQS {
+    if (this.sqsInstance) {
+      return this.sqsInstance;
+    }
+
     const sqsConfig = {
       region: this.region,
       endpoint: this.endpoint,
@@ -45,7 +55,10 @@ export class SqsService {
     if (!this.endpoint) {
       delete sqsConfig.endpoint;
     }
-    return new AWS.SQS(sqsConfig);
+
+    this.sqsInstance = AWSXRay.captureAWSClient(new AWS.SQS(sqsConfig)) as AWS.SQS;
+
+    return this.sqsInstance;
   }
 
   private getInstanceS3(): AWS.S3 {
@@ -81,12 +94,12 @@ export class SqsService {
     return QueueUrl;
   }
 
-  public async sendMessage(queueName: string, body: string): Promise<PromiseResult<AWS.SQS.SendMessageResult, AWS.AWSError>|void> {
+  public async sendMessage(queueName: string, body: string, messageAttributes?: MessageBodyAttributeMap): Promise<void|PromiseResult<AWS.SQS.SendMessageResult, AWS.AWSError>> {
     const msgSize = Buffer.byteLength(body, 'utf-8');
     const queueUrl = await this.getQueueUrl(queueName);
 
     if (queueUrl === undefined) {
-      return;
+      return Promise.resolve();
     }
 
     if (msgSize < this.maxMessageSize) {
@@ -95,12 +108,13 @@ export class SqsService {
         MessageBody: JSON.stringify({
           message: body,
         }),
+        messageAttributes,
       };
 
-      this.getInstance().sendMessage(messageConfig).promise();
+      return this.getInstance().sendMessage(messageConfig).promise();
     }
 
-    const keyId = uuid();
+    const keyId: string = uuid();
     const payloadId = `${keyId}.json`;
 
     const responseBucket = await this.getInstanceS3().upload({
@@ -120,9 +134,10 @@ export class SqsService {
           Location: responseBucket.Location,
         },
       }),
+      messageAttributes,
     };
 
-    this.getInstance().sendMessage(messageConfig).promise();
+    return this.getInstance().sendMessage(messageConfig).promise();
   }
 
   public async getMessage(queueName: string): Promise<PromiseResult<AWS.SQS.ReceiveMessageResult, AWS.AWSError>|void> {

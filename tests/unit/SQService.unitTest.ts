@@ -1,78 +1,53 @@
-import {SQService} from "../../src/services/SQService";
-import {Configuration} from "../../src/utils/Configuration";
-import {ERROR} from "../../src/models/enums";
+import { mocked } from 'ts-jest';
+import { PromiseResult } from 'aws-sdk/lib/request';
+import { SQService } from '../../src/services/SQService';
+import { SqsService } from '../../src/utils/sqs-huge-msg';
+import { Configuration } from '../../src/utils/Configuration';
+import { ERROR } from '../../src/models/enums';
 
-describe("SQService", () => {
-  // @ts-ignore
-  Configuration.instance = new Configuration("../../src/config/config.yml");
-  describe("Constructor", () => {
-    const sqclientMock = jest.fn().mockImplementation(() => {
-      return {
-        customizeRequests: jest.fn(),
-      }
-    });
-    it("grabs config and populates the SQS client with provided", () => {
-      // @ts-ignore
-      expect(SQService.prototype.sqsClient).toBeUndefined();
-      // @ts-ignore
-      expect(SQService.prototype.config).toBeUndefined();
 
-      const liveMock = new sqclientMock();
-      const svc = new SQService(liveMock);
-      // @ts-ignore
-      expect(svc.sqsClient).toEqual(liveMock);
-      // @ts-ignore
-      expect(svc.config).not.toBeUndefined();
-    });
-    describe("with No config available", () => {
-      it("throws an error", () => {
-        const ConfigMock = jest.spyOn(Configuration, "getInstance").mockReturnValue({
-          getConfig: () => {return {}},
-          getTargets: () => {return {}}
-        } as Configuration);
-        try {
-          new SQService(new sqclientMock());
-        } catch (e) {
-          expect(e.message).toEqual(ERROR.NO_SQS_CONFIG);
-        }
-      });
-    });
+describe('SQService', () => {
+  it('throws an error when there is no config available', () => {
+    jest.spyOn(Configuration, 'getInstance').mockReturnValue({
+      getConfig: () => ({}),
+      getTargets: () => ({}),
+    } as Configuration);
+    expect(() => {
+      new SQService(
+        new SqsService(
+          {
+            region: 'local',
+            queueName: 'local',
+            s3EndpointUrl: '',
+            s3Bucket: '',
+          },
+        ),
+      );
+    }).toThrow(ERROR.NO_SQS_CONFIG);
   });
 
-  describe("sendMessage", () => {
-    describe("with good inputs", () => {
-      const sendMock = jest.fn().mockReturnValue({promise: jest.fn().mockResolvedValue("It worked")});
-      const sqclientMock = jest.fn().mockImplementation(() => {
-        return {
-          sendMessage: sendMock,
-          getQueueUrl: () => {
-            return {promise: jest.fn().mockResolvedValue({QueueUrl: "testURL"})}
-          },
-          customizeRequests: jest.fn(),
-        }
-      });
-      const liveMock = new sqclientMock();
-      const svc = new SQService(liveMock);
-      const expectedSendArgs = {"MessageBody": "my thing", "QueueUrl": "testURL"};
-      it("doesn't throw an error", async () => {
-        expect.assertions(3);
-        const output = await svc.sendMessage("my thing", "aQueue");
-        expect(output).toEqual("It worked");
-        expect(sendMock).toHaveBeenCalledWith(expectedSendArgs);
-        expect(sendMock).toHaveBeenCalledTimes(1);
-      });
-      describe("and specify attributes", () => {
-        it("adds the attributes to the call params", async () => {
-          sendMock.mockReset();
-          sendMock.mockReturnValue({promise: jest.fn().mockResolvedValue("It worked")});
-          expect.assertions(3);
-          const attrMap = {"a": {DataType: "b"}};
-          const output = await svc.sendMessage("my thing", "aQueue", attrMap);
-          expect(output).toEqual("It worked");
-          expect(sendMock).toHaveBeenCalledWith({...expectedSendArgs, "MessageAttributes": attrMap});
-          expect(sendMock).toHaveBeenCalledTimes(1);
-        });
-      });
-    })
+  it('successfully sends a message', async () => {
+    jest.mock('../../src/utils/sqs-huge-msg');
+    jest.spyOn(Configuration, 'getInstance').mockReturnValue({
+      getConfig: () => ({ sqs: { local: { params: {} } } }),
+      getTargets: () => ({}),
+    } as Configuration);
+
+    const sqsService = new SqsService(
+      {
+        region: 'local',
+        queueName: 'local',
+        s3EndpointUrl: '',
+        s3Bucket: '',
+      },
+    ) as jest.Mocked<SqsService>;
+
+    sqsService.sendMessage = jest.fn().mockResolvedValue({ MessageId: 1234 } as unknown as PromiseResult<AWS.SQS.SendMessageResult, AWS.AWSError>);
+
+    const sqService = new SQService(sqsService);
+
+    const response = await sqService.sendMessage('test', 'queue') as any;
+
+    expect(response.MessageId).toEqual(1234);
   });
 });

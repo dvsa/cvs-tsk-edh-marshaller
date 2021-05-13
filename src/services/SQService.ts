@@ -1,18 +1,15 @@
-import SQS, { GetQueueUrlResult, MessageBodyAttributeMap, SendMessageResult } from 'aws-sdk/clients/sqs';
+import { MessageBodyAttributeMap, SendMessageResult } from 'aws-sdk/clients/sqs';
 import { PromiseResult } from 'aws-sdk/lib/request';
 import { AWSError, config as AWSConfig } from 'aws-sdk';
 import { SqsService } from '../utils/sqs-huge-msg';
 import { Configuration } from '../utils/Configuration';
 import { ERROR } from '../models/enums';
-// tslint:disable-next-line
-const AWSXRay = require('aws-xray-sdk');
-
 
 /**
  * Service class for interfacing with the Simple Queue Service
  */
 class SQService {
-  private readonly sqsClient: SQS;
+  private readonly sqsClient: SqsService;
 
   private readonly config: any;
 
@@ -22,7 +19,7 @@ class SQService {
      */
   constructor(sqsClient: SqsService) {
     const config: any = Configuration.getInstance().getConfig();
-    this.sqsClient = AWSXRay.captureAWSClient(sqsClient);
+    this.sqsClient = sqsClient;
 
     if (!config.sqs) {
       throw new Error(ERROR.NO_SQS_CONFIG);
@@ -41,27 +38,9 @@ class SQService {
      * @param messageAttributes - A MessageAttributeMap
      * @param queueName - The queue name
      */
-  public async sendMessage(messageBody: string, queueName: string, messageAttributes?: MessageBodyAttributeMap): Promise<PromiseResult<SendMessageResult, AWSError>> {
-    // Get the queue URL for the provided queue name
-    const queueUrlResult: GetQueueUrlResult = await this.sqsClient.getQueueUrl({ QueueName: queueName })
-      .promise();
-
-    const params = {
-      QueueUrl: queueUrlResult.QueueUrl,
-      MessageBody: messageBody,
-    };
-
-    if (messageAttributes) {
-      Object.assign(params, {
-        MessageAttributes: {
-          ...messageAttributes,
-          AWSTraceHeader: process.env._X_AMZN_TRACE_ID,
-        },
-      });
-    }
-
+  public async sendMessage(messageBody: string, queueName: string, messageAttributes?: MessageBodyAttributeMap): Promise<void|PromiseResult<SendMessageResult, AWSError>> {
     // Send a message to the queue
-    return this.sqsClient.sendMessage(params as SQS.Types.SendMessageRequest).promise();
+    return this.sqsClient.sendMessage(queueName, messageBody, messageAttributes);
   }
 }
 
