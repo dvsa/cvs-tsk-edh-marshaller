@@ -38,13 +38,15 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent, context?: Cont
     console.error('AWS_REGION envvar not available');
     return;
   }
+  // Not defining BRANCH will default to local
+  const env = (!process.env.BRANCH || process.env.BRANCH === 'local') ? 'local' : 'remote';
 
   // Instantiate the Simple Queue Service
   const sqsHugeMessage = new SqsService({
     region,
-    queueName: config.queueName,
-    s3EndpointUrl: config.s3.remote.params.endpoint,
-    s3Bucket: config.s3.remote.params.bucket,
+    queueName: config.sqs[env].queueName[0],
+    s3EndpointUrl: config.s3[env].params.endpoint,
+    s3Bucket: config.s3[env].params.bucket,
   });
   const sqService: SQService = new SQService(sqsHugeMessage);
   // const sendMessagePromises: Array<Promise<PromiseResult<SendMessageResult, AWSError>>> = [];

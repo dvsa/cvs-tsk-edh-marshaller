@@ -105,9 +105,7 @@ export class SqsService {
     if (msgSize < this.maxMessageSize) {
       const messageConfig = {
         QueueUrl: queueUrl,
-        MessageBody: JSON.stringify({
-          message: body,
-        }),
+        MessageBody: body,
         MessageAttributes: messageAttributes,
       };
 
@@ -119,9 +117,7 @@ export class SqsService {
 
     const responseBucket = await this.getInstanceS3().upload({
       Bucket: this.s3Bucket,
-      Body: JSON.stringify({
-        message: body,
-      }),
+      Body: body,
       Key: payloadId,
     }).promise();
 

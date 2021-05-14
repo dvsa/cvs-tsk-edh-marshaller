@@ -14,6 +14,9 @@ sqs:
     queueName:
       - cvs-edh-test-results-${BRANCH}-queue
 s3:
+  local:
+    params:
+      endpoint: http://s3:9324
   remote:
     params:
       endpoint: https://s3.${AWS_REGION}.amazonaws.com
