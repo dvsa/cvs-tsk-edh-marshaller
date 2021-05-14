@@ -41,6 +41,8 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent, context?: Cont
     console.error('AWS_REGION envvar not available');
     return;
   }
+  // Not defining BRANCH will default to local
+  const env = (!process.env.BRANCH || process.env.BRANCH === 'local') ? 'local' : 'remote';
 
   if (!bucket) {
     console.error('SQS_BUCKET envvar not available');
