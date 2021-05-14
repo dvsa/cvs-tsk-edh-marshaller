@@ -108,7 +108,7 @@ export class SqsService {
         MessageBody: JSON.stringify({
           message: body,
         }),
-        messageAttributes,
+        MessageAttributes: messageAttributes,
       };
 
       return this.getInstance().sendMessage(messageConfig).promise();
@@ -134,7 +134,7 @@ export class SqsService {
           Location: responseBucket.Location,
         },
       }),
-      messageAttributes,
+      MessageAttributes: messageAttributes,
     };
 
     return this.getInstance().sendMessage(messageConfig).promise();
