@@ -1,5 +1,4 @@
 import { Context } from 'aws-lambda';
-import { SqsService } from '../../src/utils/sqs-huge-msg';
 import { SQService } from '../../src/services/SQService';
 import { edhMarshaller } from '../../src/functions/edhMarshaller';
 

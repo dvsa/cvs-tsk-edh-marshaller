@@ -16,9 +16,9 @@ describe('SQService', () => {
       new SQService(
         new SqsService(
           {
-            region: 'local',
+            s3: {} as AWS.S3,
+            sqs: {} as AWS.SQS,
             queueName: 'local',
-            s3EndpointUrl: '',
             s3Bucket: '',
           },
         ),
@@ -35,9 +35,9 @@ describe('SQService', () => {
 
     const sqsService = new SqsService(
       {
-        region: 'local',
+        s3: {} as AWS.S3,
+        sqs: {} as AWS.SQS,
         queueName: 'local',
-        s3EndpointUrl: '',
         s3Bucket: '',
       },
     ) as jest.Mocked<SqsService>;
