@@ -1,4 +1,4 @@
-import fs from 'fs-extra';
+import fs from 'fs';
 import { SqsService } from '../../../src/utils/sqs-huge-msg';
 
 describe('SQS Large Message Handler', () => {
@@ -24,7 +24,7 @@ describe('SQS Large Message Handler', () => {
     });
 
     it('correctly sends a large message', async () => {
-      const largeMessage = await fs.readFile('./tests/resources/fake-large-message.txt', 'utf-8');
+      const largeMessage = fs.readFileSync('./tests/resources/fake-large-message.txt', { encoding: 'utf-8' });
       const mockSendMessagePromise = jest.fn().mockResolvedValue('success');
       const mockUploadPromise = jest.fn().mockResolvedValue({ Key: 'key', Location: 'location' });
       const mockUpload = jest.fn().mockReturnValue({ promise: mockUploadPromise });
@@ -48,8 +48,8 @@ describe('SQS Large Message Handler', () => {
       expect(response).toEqual('success');
     });
 
-    it('adds  the item prefix if one is specified', async () => {
-      const largeMessage = await fs.readFile('./tests/resources/fake-large-message.txt', 'utf-8');
+    it('adds the item prefix if one is specified', async () => {
+      const largeMessage = fs.readFileSync('./tests/resources/fake-large-message.txt', { encoding: 'utf-8' });
       const mockSendMessagePromise = jest.fn().mockResolvedValue('success');
       const mockUploadPromise = jest.fn().mockResolvedValue({ Key: 'key', Location: 'location' });
       const mockUpload = jest.fn().mockReturnValue({ promise: mockUploadPromise });
