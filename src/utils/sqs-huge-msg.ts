@@ -102,11 +102,11 @@ export class SqsService {
     return this.sqs.sendMessage(messageConfig).promise();
   }
 
-  public async getMessage(queueName: string): Promise<PromiseResult<AWS.SQS.ReceiveMessageResult, AWS.AWSError>|void> {
+  public async getMessage(queueName: string): Promise<PromiseResult<AWS.SQS.ReceiveMessageResult, AWS.AWSError>> {
     const queueUrl = await this.getQueueUrl(queueName);
 
     if (queueUrl === undefined) {
-      return Promise.resolve();
+      throw new Error('Queue URL not found');
     }
 
     const message = await this.sqs
@@ -115,7 +115,7 @@ export class SqsService {
     const messages = message.Messages;
 
     if (!messages || messages.length === 0) {
-      return Promise.resolve();
+      throw new Error('No messages found');
     }
 
     const { Body } = messages[0];
@@ -129,7 +129,9 @@ export class SqsService {
   }
 
   public async getMessageContent(body: string): Promise<string> {
+    console.log(body);
     const parsedBody = JSON.parse(body) as MessageBody;
+
     if (parsedBody.S3Payload) {
       const s3Object = await this.s3
         .getObject({
