@@ -129,9 +129,7 @@ export class SqsService {
   }
 
   public async getMessageContent(body: string): Promise<string> {
-    console.log(body);
     const parsedBody = JSON.parse(body) as MessageBody;
-
     if (parsedBody.S3Payload) {
       const s3Object = await this.s3
         .getObject({
