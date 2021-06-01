@@ -54,18 +54,6 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent, context?: Cont
   // Not defining BRANCH will default to local
   const env = (!branch || branch === 'local') ? 'local' : 'remote';
 
-  if (!bucket) {
-    console.error('SQS_BUCKET envvar not available');
-    return;
-  }
-
-  if (!branch) {
-    console.error('BRANCH envvar not available');
-    return;
-  }
-  // Not defining BRANCH will default to local
-  const env = (!branch || branch === 'local') ? 'local' : 'remote';
-
   // Instantiate the Simple Queue Service
   const s3 = AWSXRay.captureAWSClient(new S3({
     s3ForcePathStyle: true,
