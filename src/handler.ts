@@ -1,13 +1,13 @@
-import { config as AWSConfig } from 'aws-sdk';
-import { edhMarshaller } from './functions/edhMarshaller';
+import {edhMarshaller} from "./functions/edhMarshaller";
+import {config as AWSConfig} from "aws-sdk";
 
-const isOffline: boolean = (!process.env.BRANCH || process.env.BRANCH === 'local');
+const isOffline: boolean = (!process.env.BRANCH || process.env.BRANCH === "local");
 
 if (isOffline) {
-  AWSConfig.credentials = {
-    accessKeyId: 'offline',
-    secretAccessKey: 'offline',
-  };
+    AWSConfig.credentials = {
+        accessKeyId: "offline",
+        secretAccessKey: "offline"
+    };
 }
 
-export { edhMarshaller as handler };
+export {edhMarshaller as handler};

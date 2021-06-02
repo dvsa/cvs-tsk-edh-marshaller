@@ -40,5 +40,3 @@ coverage/**
 .scannerwork/**
 report.json
 .reports
-
-.vscode
