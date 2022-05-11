@@ -1,4 +1,4 @@
-import { Record } from "aws-sdk/clients/dynamodbstreams";
+import { Record } from 'aws-sdk/clients/dynamodbstreams';
 
 export interface StreamRecord extends Record {
   eventSourceARN: string;

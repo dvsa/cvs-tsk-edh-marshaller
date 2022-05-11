@@ -2,19 +2,20 @@ import SQS, {
   GetQueueUrlResult,
   MessageBodyAttributeMap,
   SendMessageResult,
-} from "aws-sdk/clients/sqs";
-import { Configuration } from "../utils/Configuration";
-import { PromiseResult } from "aws-sdk/lib/request";
-import { AWSError, config as AWSConfig } from "aws-sdk";
-import { ERROR } from "../models/enums";
-// tslint:disable-next-line
-const AWSXRay = require("aws-xray-sdk");
+} from 'aws-sdk/clients/sqs';
+import { Configuration } from '../utils/Configuration';
+import { PromiseResult } from 'aws-sdk/lib/request';
+import { AWSError, config as AWSConfig } from 'aws-sdk';
+import { ERROR } from '../models/enums';
+// eslint-disable-next-line
+const AWSXRay = require('aws-xray-sdk');
 
 /**
  * Service class for interfacing with the Simple Queue Service
  */
 class SQService {
   private readonly sqsClient: SQS;
+
   private readonly config: any;
 
   /**
@@ -31,9 +32,9 @@ class SQService {
 
     // Not defining BRANCH will default to local
     const env: string =
-      !process.env.BRANCH || process.env.BRANCH === "local"
-        ? "local"
-        : "remote";
+      !process.env.BRANCH || process.env.BRANCH === 'local'
+        ? 'local'
+        : 'remote';
     this.config = config.sqs[env];
 
     AWSConfig.sqs = this.config.params;
@@ -48,7 +49,7 @@ class SQService {
   public async sendMessage(
     messageBody: string,
     queueName: string,
-    messageAttributes?: MessageBodyAttributeMap
+    messageAttributes?: MessageBodyAttributeMap,
   ): Promise<PromiseResult<SendMessageResult, AWSError>> {
     // Get the queue URL for the provided queue name
     const queueUrlResult: GetQueueUrlResult = await this.sqsClient

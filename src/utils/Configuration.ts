@@ -1,12 +1,13 @@
 // @ts-ignore
-import * as yml from "node-yaml";
-import { TargetConfig } from "../models";
+import * as yml from 'node-yaml';
+import { TargetConfig } from '../models';
 
 /**
  * Helper class for retrieving project configuration
  */
 class Configuration {
   private static instance: Configuration;
+
   private readonly config: any;
 
   private constructor(configPath: string) {
@@ -14,20 +15,20 @@ class Configuration {
 
     // Replace environment variable references
     let stringifiedConfig: string = JSON.stringify(this.config);
-    const envRegex: RegExp = /\${(\w+\b):?(\w+\b)?}/g;
+    const envRegex = /\${(\w+\b):?(\w+\b)?}/g;
     const matches: RegExpMatchArray | null = stringifiedConfig.match(envRegex);
 
     if (matches) {
       matches.forEach((match: string) => {
         envRegex.lastIndex = 0;
         const captureGroups: RegExpExecArray = envRegex.exec(
-          match
+          match,
         ) as RegExpExecArray;
 
         // Insert the environment variable if available. If not, insert placeholder. If no placeholder, leave it as is.
         stringifiedConfig = stringifiedConfig.replace(
           match,
-          process.env[captureGroups[1]] || captureGroups[2] || captureGroups[1]
+          process.env[captureGroups[1]] || captureGroups[2] || captureGroups[1],
         );
       });
     }
@@ -41,7 +42,7 @@ class Configuration {
    */
   public static getInstance(): Configuration {
     if (!this.instance) {
-      this.instance = new Configuration("../config/config.yml");
+      this.instance = new Configuration('../config/config.yml');
     }
 
     return Configuration.instance;
