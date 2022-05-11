@@ -1,15 +1,13 @@
 import {
-  Callback,
-  Context,
   DynamoDBRecord,
   DynamoDBStreamEvent,
   Handler,
 } from 'aws-lambda';
 import { AWSError, SQS } from 'aws-sdk';
-import { SQService } from '../services/SQService';
+import { SQService } from '../services/sqs';
 import { PromiseResult } from 'aws-sdk/lib/request';
 import { SendMessageResult } from 'aws-sdk/clients/sqs';
-import { debugOnlyLog, getTargetQueueFromSourceARN } from '../utils/Utils';
+import { debugOnlyLog, getTargetQueueFromSourceARN } from '../utils/utils';
 
 /**
  * λ function to process a DynamoDB stream of test results into a queue for certificate generation.
@@ -17,11 +15,7 @@ import { debugOnlyLog, getTargetQueueFromSourceARN } from '../utils/Utils';
  * @param context - λ Context
  * @param callback - callback function
  */
-const edhMarshaller: Handler = async (
-  event: DynamoDBStreamEvent,
-  _context: Context,
-  _callback: Callback,
-): Promise<void | Array<PromiseResult<SendMessageResult, AWSError>>> => {
+const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<void | Array<PromiseResult<SendMessageResult, AWSError>>> => {
   if (!event) {
     console.error('ERROR: event is not defined.');
     return;
@@ -36,32 +30,23 @@ const edhMarshaller: Handler = async (
 
   // Instantiate the Simple Queue Service
   const sqService: SQService = new SQService(new SQS());
-  const sendMessagePromises: Array<
-  Promise<PromiseResult<SendMessageResult, AWSError>>
-  > = [];
+  const sendMessagePromises: Promise<PromiseResult<SendMessageResult, AWSError>>[] = [];
 
   for (const record of records) {
     debugOnlyLog('Record: ', record);
 
-    if (!record.eventSourceARN) {
-      continue;
+    if (record.eventSourceARN) {
+      debugOnlyLog('New image: ', record.dynamodb?.NewImage);
+      const targetQueue = getTargetQueueFromSourceARN(record.eventSourceARN);
+  
+      debugOnlyLog('Target Queue', targetQueue);
+      sendMessagePromises.push(sqService.sendMessage(JSON.stringify(record), targetQueue));
     }
-
-    debugOnlyLog('New image: ', record.dynamodb?.NewImage);
-
-    const targetQueue = getTargetQueueFromSourceARN(record.eventSourceARN);
-
-    debugOnlyLog('Target Queue', targetQueue);
-
-    sendMessagePromises.push(
-      sqService.sendMessage(JSON.stringify(record), targetQueue),
-    );
   }
 
   return Promise.all(sendMessagePromises).catch((error: AWSError) => {
     console.error(error);
-    console.log('records');
-    console.log(records);
+    console.log('records', records);
     if (error.code !== 'InvalidParameterValue') {
       throw error;
     }

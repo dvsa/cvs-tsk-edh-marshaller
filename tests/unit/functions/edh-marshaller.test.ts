@@ -1,6 +1,6 @@
-import { edhMarshaller } from '../../src/functions/edhMarshaller';
-import { SQService } from '../../src/services/SQService';
-import { Configuration } from '../../src/utils/Configuration';
+import { edhMarshaller } from '../../../src/functions/edh-marshaller';
+import { SQService } from '../../../src/services/sqs';
+import { Configuration } from '../../../src/utils/configuration';
 import { Context } from 'aws-lambda';
 
 describe('edhMarshaller Function', () => {

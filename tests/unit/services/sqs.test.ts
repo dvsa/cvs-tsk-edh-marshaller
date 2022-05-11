@@ -1,6 +1,6 @@
-import { SQService } from '../../src/services/SQService';
-import { Configuration } from '../../src/utils/Configuration';
-import { ERROR } from '../../src/models/enums';
+import { SQService } from '../../../src/services/sqs';
+import { Configuration } from '../../../src/utils/configuration';
+import { ERROR } from '../../../src/models/enums';
 
 describe('SQService', () => {
   // @ts-ignore

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { getTargetQueueFromSourceARN } from '../../src/utils/Utils';
-import { Configuration } from '../../src/utils/Configuration';
-import { ERROR } from '../../src/models/enums';
+import { getTargetQueueFromSourceARN } from '../../../src/utils/utils';
+import { Configuration } from '../../../src/utils/configuration';
+import { ERROR } from '../../../src/models/enums';
 
 describe('utils', () => {
   describe('getTargetQueue', () => {

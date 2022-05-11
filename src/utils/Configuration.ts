@@ -1,6 +1,30 @@
-// @ts-ignore
-import * as yml from 'node-yaml';
+import SQS from 'aws-sdk/clients/sqs';
+import { readSync } from 'node-yaml';
 import { TargetConfig } from '../models';
+
+interface MarshallerConfig {
+  sqs: {
+    local: {
+      params: SQS.ClientConfiguration;
+      queueName: [];
+    },
+    remote: {
+      params: SQS.ClientConfiguration;
+      queueName: [];
+    }
+  },
+  targets: {
+    activities: {
+      queueName: string;
+    },
+    'test-results': {
+      queueName: string;
+    },
+    'technical-records': {
+      queueName: string;
+    }
+  }
+}
 
 /**
  * Helper class for retrieving project configuration
@@ -8,32 +32,27 @@ import { TargetConfig } from '../models';
 class Configuration {
   private static instance: Configuration;
 
-  private readonly config: any;
+  private readonly config: MarshallerConfig;
 
   private constructor(configPath: string) {
-    this.config = yml.readSync(configPath);
+    const config = readSync(configPath);
 
     // Replace environment variable references
-    let stringifiedConfig: string = JSON.stringify(this.config);
+    let stringifiedConfig: string = JSON.stringify(config);
     const envRegex = /\${(\w+\b):?(\w+\b)?}/g;
     const matches: RegExpMatchArray | null = stringifiedConfig.match(envRegex);
 
     if (matches) {
       matches.forEach((match: string) => {
         envRegex.lastIndex = 0;
-        const captureGroups: RegExpExecArray = envRegex.exec(
-          match,
-        ) as RegExpExecArray;
+        const captureGroups: RegExpExecArray = envRegex.exec(match) as RegExpExecArray;
 
         // Insert the environment variable if available. If not, insert placeholder. If no placeholder, leave it as is.
-        stringifiedConfig = stringifiedConfig.replace(
-          match,
-          process.env[captureGroups[1]] || captureGroups[2] || captureGroups[1],
-        );
+        stringifiedConfig = stringifiedConfig.replace(match, process.env[captureGroups[1]] || captureGroups[2] || captureGroups[1]);
       });
     }
 
-    this.config = JSON.parse(stringifiedConfig);
+    this.config = JSON.parse(stringifiedConfig) as MarshallerConfig;
   }
 
   /**
@@ -52,7 +71,7 @@ class Configuration {
    * Retrieves the entire config as an object
    * @returns any
    */
-  public getConfig(): any {
+  public getConfig(): MarshallerConfig {
     return this.config;
   }
 
@@ -61,4 +80,7 @@ class Configuration {
   }
 }
 
-export { Configuration };
+export {
+  Configuration,
+  MarshallerConfig,
+};

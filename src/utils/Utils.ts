@@ -1,7 +1,8 @@
 /**
  * Utils functions
  */
-import { Configuration } from './Configuration';
+import { DynamoDBRecord } from 'aws-lambda';
+import { Configuration } from './configuration';
 import { ERROR } from '../models/enums';
 
 export const getTargetQueueFromSourceARN = (arn: string) => {
@@ -15,7 +16,7 @@ export const getTargetQueueFromSourceARN = (arn: string) => {
   return targets[validTargets[0]].queueName;
 };
 
-export const debugOnlyLog = (...args: any) => {
+export const debugOnlyLog = (...args: Array<Record<string, unknown> | string | unknown | DynamoDBRecord[]>) => {
   if (process.env.DEBUG === 'TRUE') {
     console.log(...args);
   }
