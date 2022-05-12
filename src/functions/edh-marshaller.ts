@@ -18,18 +18,18 @@ import { debugOnlyLog, getTargetQueueFromSourceARN } from '../utils/utils';
 const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<void | Array<PromiseResult<SendMessageResult, AWSError>>> => {
   if (!event) {
     console.error('ERROR: event is not defined.');
-    return;
+    return undefined;
   }
   const records: DynamoDBRecord[] = event.Records;
   if (!records || !records.length) {
     console.error('ERROR: No Records in event: ', event);
-    return;
+    return undefined;
   }
 
   debugOnlyLog('Records: ', records);
 
   // Instantiate the Simple Queue Service
-  const sqService: SQSService = new SQSService(new SQS());
+  const sqsService: SQSService = new SQSService(new SQS());
   const sendMessagePromises: Promise<PromiseResult<SendMessageResult, AWSError>>[] = [];
 
   for (const record of records) {
@@ -40,7 +40,7 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<void 
       const targetQueue = getTargetQueueFromSourceARN(record.eventSourceARN);
   
       debugOnlyLog('Target Queue', targetQueue);
-      sendMessagePromises.push(sqService.sendMessage(JSON.stringify(record), targetQueue));
+      sendMessagePromises.push(sqsService.sendMessage(JSON.stringify(record), targetQueue));
     }
   }
 

@@ -1,13 +1,11 @@
+/* eslint-disable jest/no-conditional-expect */
 import { edhMarshaller } from '../../../src/functions/edh-marshaller';
 import { SQSService } from '../../../src/services/sqs';
-import { Configuration } from '../../../src/utils/configuration';
 import { Context } from 'aws-lambda';
 
 describe('edhMarshaller Function', () => {
-  // @ts-ignore
-  const ctx: Context = null;
-  // @ts-ignore
-  Configuration.instance = new Configuration('../../src/config/config.yml');
+  let ctx: Context;
+
   afterAll(() => {
     jest.restoreAllMocks();
     jest.resetModules();
@@ -15,25 +13,21 @@ describe('edhMarshaller Function', () => {
 
   describe('if the event is undefined', () => {
     it('should return undefined', async () => {
-      expect.assertions(1);
-      const result = await edhMarshaller(undefined, ctx, () => {
-        return;
-      });
-      expect(result).toBeUndefined();
+      jest.spyOn(console, 'error');
+
+      await edhMarshaller(undefined, ctx, () => { return; });
+
+      expect(console.error).toHaveBeenCalledWith('ERROR: event is not defined.');
     });
   });
 
   describe('if the event has no records', () => {
     it('should return undefined', async () => {
-      expect.assertions(1);
-      const result = await edhMarshaller(
-        { something: 'not records' },
-        ctx,
-        () => {
-          return;
-        },
-      );
-      expect(result).toBeUndefined();
+      jest.spyOn(console, 'error');
+
+      await edhMarshaller({ something: 'not records' }, ctx, () => { return; });
+
+      expect(console.error).toHaveBeenCalledWith('ERROR: No Records in event: ', { something: 'not records' });
     });
   });
 
@@ -55,9 +49,8 @@ describe('edhMarshaller Function', () => {
         .spyOn(SQSService.prototype, 'sendMessage')
         .mockImplementation(sendMessageMock);
 
-      await edhMarshaller(event, ctx, () => {
-        return;
-      });
+      await edhMarshaller(event, ctx, () => { return; });
+
       expect(sendMessageMock).toHaveBeenCalledWith(
         JSON.stringify({
           eventSourceARN: 'test-results',
@@ -74,12 +67,22 @@ describe('edhMarshaller Function', () => {
         jest
           .spyOn(SQSService.prototype, 'sendMessage')
           .mockRejectedValue('It broke');
+        jest.spyOn(console, 'error');
+        jest.spyOn(console, 'log');
 
         try {
           await edhMarshaller(event, ctx, () => {
             return;
           });
         } catch (e) {
+          expect(console.log).toHaveBeenCalledWith('records', [{
+            dynamodb: {
+              some: 'thing',
+            },
+            eventName: 'INSERT',
+            eventSourceARN: 'test-results',
+          }]);
+          expect(console.error).toHaveBeenCalledWith('It broke');
           expect(e).toBe('It broke');
         }
       });
