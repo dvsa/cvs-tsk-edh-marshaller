@@ -18,10 +18,10 @@ interface SQSConfig {
 /**
  * Service class for interfacing with the Simple Queue Service
  */
-class SQService {
-  private readonly sqsClient: SQS;
+class SQSService {
+  private sqsClient: SQS;
 
-  private readonly config: SQSConfig;
+  private config: SQSConfig;
 
   /**
    * Constructor for the ActivityService class
@@ -38,7 +38,7 @@ class SQService {
     // Not defining BRANCH will default to local
     this.config = config.sqs[!process.env.BRANCH || process.env.BRANCH === 'local' ? 'local' : 'remote'];
 
-    AWSConfig.sqs = this.config.params;
+    AWSConfig.sqs = this.configuration.params;
   }
 
   /**
@@ -72,6 +72,26 @@ class SQService {
       .sendMessage(params as SQS.Types.SendMessageRequest)
       .promise();
   }
+
+  // accessor method added to aid unit testing
+  get client(): SQS {
+    return this.sqsClient;
+  }
+
+  // accessor method added to aid unit testing
+  set client(sqsClient: SQS) {
+    this.sqsClient = sqsClient;
+  }
+
+  // accessor method added to aid unit testing
+  get configuration(): SQSConfig {
+    return this.config;
+  }
+
+  // accessor method added to aid unit testing
+  set configuration(config: SQSConfig) {
+    this.config = config;
+  }
 }
 
-export { SQService };
+export { SQSService };

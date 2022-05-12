@@ -1,10 +1,9 @@
-import { SQService } from '../../../src/services/sqs';
+import { SQSService } from '../../../src/services/sqs';
 import { Configuration } from '../../../src/utils/configuration';
 import { ERROR } from '../../../src/models/enums';
+import { SQS } from 'aws-sdk';
 
-describe('SQService', () => {
-  // @ts-ignore
-  Configuration.instance = new Configuration('../../src/config/config.yml');
+describe('SQSService', () => {
   describe('Constructor', () => {
     const sqclientMock = jest.fn().mockImplementation(() => {
       return {
@@ -12,21 +11,15 @@ describe('SQService', () => {
       };
     });
     it('grabs config and populates the SQS client with provided', () => {
-      // @ts-ignore
-      expect(SQService.prototype.sqsClient).toBeUndefined();
-      // @ts-ignore
-      expect(SQService.prototype.config).toBeUndefined();
-
-      const liveMock = new sqclientMock();
-      const svc = new SQService(liveMock);
-      // @ts-ignore
-      expect(svc.sqsClient).toEqual(liveMock);
-      // @ts-ignore
-      expect(svc.config).toBeDefined();
+      const liveMock = new sqclientMock() as SQS;
+      const svc = new SQSService(liveMock);
+      expect(svc.client).toEqual(liveMock);
+      expect(svc.configuration).toBeDefined();
     });
+
     describe('with No config available', () => {
       it('throws an error', () => {
-        const ConfigMock = jest
+        jest
           .spyOn(Configuration, 'getInstance')
           .mockReturnValue({
             getConfig: () => {
@@ -36,11 +29,9 @@ describe('SQService', () => {
               return {};
             },
           } as Configuration);
-        try {
-          new SQService(new sqclientMock());
-        } catch (e) {
-          expect((e as Error).message).toEqual(ERROR.NO_SQS_CONFIG);
-        }
+
+        expect(() => new SQSService(new sqclientMock() as SQS))
+          .toThrow(ERROR.NO_SQS_CONFIG);
       });
     });
   });
@@ -61,8 +52,8 @@ describe('SQService', () => {
           customizeRequests: jest.fn(),
         };
       });
-      const liveMock = new sqclientMock();
-      const svc = new SQService(liveMock);
+      const liveMock = new sqclientMock() as SQS;
+      const svc = new SQSService(liveMock);
       const expectedSendArgs = { MessageBody: 'my thing', QueueUrl: 'testURL' };
       it("doesn't throw an error", async () => {
         expect.assertions(3);
@@ -71,6 +62,7 @@ describe('SQService', () => {
         expect(sendMock).toHaveBeenCalledWith(expectedSendArgs);
         expect(sendMock).toHaveBeenCalledTimes(1);
       });
+
       describe('and specify attributes', () => {
         it('adds the attributes to the call params', async () => {
           sendMock.mockReset();

@@ -1,5 +1,5 @@
 import { edhMarshaller } from '../../../src/functions/edh-marshaller';
-import { SQService } from '../../../src/services/sqs';
+import { SQSService } from '../../../src/services/sqs';
 import { Configuration } from '../../../src/utils/configuration';
 import { Context } from 'aws-lambda';
 
@@ -52,7 +52,7 @@ describe('edhMarshaller Function', () => {
     it('should invoke SQS service with correct params', async () => {
       const sendMessageMock = jest.fn().mockResolvedValue('howdy');
       jest
-        .spyOn(SQService.prototype, 'sendMessage')
+        .spyOn(SQSService.prototype, 'sendMessage')
         .mockImplementation(sendMessageMock);
 
       await edhMarshaller(event, ctx, () => {
@@ -72,7 +72,7 @@ describe('edhMarshaller Function', () => {
     describe('when SQService throws an error', () => {
       it('should throw the error up', async () => {
         jest
-          .spyOn(SQService.prototype, 'sendMessage')
+          .spyOn(SQSService.prototype, 'sendMessage')
           .mockRejectedValue('It broke');
 
         try {

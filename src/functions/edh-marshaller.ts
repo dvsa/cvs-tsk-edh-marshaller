@@ -4,7 +4,7 @@ import {
   Handler,
 } from 'aws-lambda';
 import { AWSError, SQS } from 'aws-sdk';
-import { SQService } from '../services/sqs';
+import { SQSService } from '../services/sqs';
 import { PromiseResult } from 'aws-sdk/lib/request';
 import { SendMessageResult } from 'aws-sdk/clients/sqs';
 import { debugOnlyLog, getTargetQueueFromSourceARN } from '../utils/utils';
@@ -29,7 +29,7 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<void 
   debugOnlyLog('Records: ', records);
 
   // Instantiate the Simple Queue Service
-  const sqService: SQService = new SQService(new SQS());
+  const sqService: SQSService = new SQSService(new SQS());
   const sendMessagePromises: Promise<PromiseResult<SendMessageResult, AWSError>>[] = [];
 
   for (const record of records) {
