@@ -2,7 +2,7 @@
  * Utils functions
  */
 import { DynamoDBRecord } from 'aws-lambda';
-import { Configuration } from './configuration';
+import { Configuration } from './config';
 import { ERROR } from '../models/enums';
 
 export const getTargetQueueFromSourceARN = (arn: string) => {

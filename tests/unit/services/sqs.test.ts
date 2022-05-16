@@ -1,5 +1,5 @@
 import { SQSService } from '../../../src/services/sqs';
-import { Configuration } from '../../../src/utils/configuration';
+import { Configuration } from '../../../src/utils/config';
 import { ERROR } from '../../../src/models/enums';
 import { SQS } from 'aws-sdk';
 

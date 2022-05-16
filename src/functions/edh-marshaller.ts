@@ -7,7 +7,7 @@ import { AWSError, SQS } from 'aws-sdk';
 import { SQSService } from '../services/sqs';
 import { PromiseResult } from 'aws-sdk/lib/request';
 import { SendMessageResult } from 'aws-sdk/clients/sqs';
-import { debugOnlyLog, getTargetQueueFromSourceARN } from '../utils/utils';
+import { debugOnlyLog, getTargetQueueFromSourceARN } from '../utils/utilities';
 
 /**
  * λ function to process a DynamoDB stream of test results into a queue for certificate generation.

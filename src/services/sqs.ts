@@ -7,7 +7,7 @@ import { PromiseResult } from 'aws-sdk/lib/request';
 import AWSXRay from 'aws-xray-sdk';
 import { AWSError, config as AWSConfig } from 'aws-sdk';
 import { ERROR } from '../models/enums';
-import { Configuration, MarshallerConfig } from '../utils/configuration';
+import { Configuration, MarshallerConfig } from '../utils/config';
 // eslint-disable-next-line
 
 interface SQSConfig {
