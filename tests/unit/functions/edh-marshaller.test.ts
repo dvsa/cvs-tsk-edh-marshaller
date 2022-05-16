@@ -13,6 +13,8 @@ describe('edhMarshaller Function', () => {
 
   describe('if the event is undefined', () => {
     it('should return undefined', async () => {
+      process.env.PROCESS_FLAT_TECH_RECORDS = 'false';
+
       jest.spyOn(console, 'error');
 
       await edhMarshaller(undefined, ctx, () => { return; });
@@ -23,6 +25,8 @@ describe('edhMarshaller Function', () => {
 
   describe('if the event has no records', () => {
     it('should return undefined', async () => {
+      process.env.PROCESS_FLAT_TECH_RECORDS = 'false';
+
       jest.spyOn(console, 'error');
 
       await edhMarshaller({ something: 'not records' }, ctx, () => { return; });

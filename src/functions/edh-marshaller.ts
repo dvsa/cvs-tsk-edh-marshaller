@@ -7,7 +7,7 @@ import { AWSError, SQS } from 'aws-sdk';
 import { SQSService } from '../services/sqs';
 import { PromiseResult } from 'aws-sdk/lib/request';
 import { SendMessageResult } from 'aws-sdk/clients/sqs';
-import { debugOnlyLog, getTargetQueueFromSourceARN } from '../utils/utilities';
+import { debugOnlyLog, getTargetQueueFromSourceARN, getTechRecordEnvVar } from '../utils/utilities';
 import { transformTechRecord } from '../utils/transformTechRecord';
 
 /**
@@ -17,7 +17,7 @@ import { transformTechRecord } from '../utils/transformTechRecord';
  * @param callback - callback function
  */
 const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<void | Array<PromiseResult<SendMessageResult, AWSError>>> => {
-  const processFlatTechRecords = process.env.PROCESS_FLAT_TECH_RECORDS || 'false';
+  const processFlatTechRecords: boolean = getTechRecordEnvVar();
 
   if (!event) {
     console.error('ERROR: event is not defined.');
@@ -44,13 +44,13 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<void 
 
       // PROCESS_FLAT_TECH_RECORDS toggles whether flat-tech-records or technical-records record stream events populate the NOP
       if (record.eventSourceARN.includes('flat-tech-records')) {
-        if (processFlatTechRecords === 'false') {
+        if (!processFlatTechRecords) {
           continue;
         }
         transformTechRecord(record);
       }
 
-      if (record.eventSourceARN.includes('technical-records') && processFlatTechRecords === 'true') {
+      if (record.eventSourceARN.includes('technical-records') && processFlatTechRecords) {
         continue;
       }
   
