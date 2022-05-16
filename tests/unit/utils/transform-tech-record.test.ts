@@ -1,6 +1,6 @@
 import { DynamoDBRecord } from 'aws-lambda';
 import { DynamoDB } from 'aws-sdk';
-import { transformTechRecord } from '../../../src/utils/transformTechRecord';
+import { transformTechRecord } from '../../../src/utils/transform-tech-record';
 
 const dbRecordOld: DynamoDBRecord = {
   dynamodb: {

@@ -8,7 +8,7 @@ import { SQSService } from '../services/sqs';
 import { PromiseResult } from 'aws-sdk/lib/request';
 import { SendMessageResult } from 'aws-sdk/clients/sqs';
 import { debugOnlyLog, getTargetQueueFromSourceARN, getTechRecordEnvVar } from '../utils/utilities';
-import { transformTechRecord } from '../utils/transformTechRecord';
+import { transformTechRecord } from '../utils/transform-tech-record';
 
 /**
  * λ function to process a DynamoDB stream and forward it to an appropriate SQS queue.

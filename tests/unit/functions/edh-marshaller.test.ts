@@ -1,7 +1,7 @@
 import { edhMarshaller } from '../../../src/functions/edh-marshaller';
 import { SQSService } from '../../../src/services/sqs';
 import { Context } from 'aws-lambda';
-import * as _ from '../../../src/utils/transformTechRecord';
+import * as _ from '../../../src/utils/transform-tech-record';
 
 describe('edhMarshaller Function', () => {
   let ctx: Context;
@@ -185,13 +185,7 @@ describe('edhMarshaller Function', () => {
         jest.spyOn(console, 'error');
         jest.spyOn(console, 'log');
 
-        try {
-          await edhMarshaller(event, ctx, () => {return;});
-        } catch (e) {
-          // eslint-disable-next-line jest/no-conditional-expect
-          expect(e).toBe('It broke');
-        }
-
+        await expect(edhMarshaller(event, ctx, () => {return;})).rejects.toBe('It broke');
         expect(console.log).toHaveBeenCalledWith('records', [{
           dynamodb: {
             some: 'thing',
