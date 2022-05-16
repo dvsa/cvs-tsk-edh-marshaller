@@ -1,7 +1,7 @@
-/* eslint-disable jest/no-conditional-expect */
 import { edhMarshaller } from '../../../src/functions/edh-marshaller';
 import { SQSService } from '../../../src/services/sqs';
 import { Context } from 'aws-lambda';
+import * as _ from '../../../src/utils/transformTechRecord';
 
 describe('edhMarshaller Function', () => {
   let ctx: Context;
@@ -31,7 +31,117 @@ describe('edhMarshaller Function', () => {
     });
   });
 
-  describe('with good event', () => {
+  describe('with good technical-records event', () => {
+    const techEvent = {
+      Records: [
+        {
+          eventSourceARN: 'technical-records',
+          eventName: 'INSERT',
+          dynamodb: {
+            some: 'thing',
+          },
+        },
+      ],
+    };
+    
+    it('should not load onto SQS if PROCESS_FLAT_TECH_RECORDS is true', async () => {
+      process.env.PROCESS_FLAT_TECH_RECORDS = 'true';
+      const sendMessageMock = jest.fn().mockResolvedValue('howdy');
+      jest
+        .spyOn(SQSService.prototype, 'sendMessage')
+        .mockImplementation(sendMessageMock);
+
+
+      await edhMarshaller(techEvent, ctx, () => { return; });
+
+      expect(sendMessageMock).toHaveBeenCalledTimes(0);
+    });
+
+    it('should load onto SQS if PROCESS_FLAT_TECH_RECORDS is false', async () => {
+      process.env.PROCESS_FLAT_TECH_RECORDS = 'false';
+      const sendMessageMock = jest.fn().mockResolvedValue('howdy');
+      const transformRecordMock = jest.fn();
+      jest
+        .spyOn(SQSService.prototype, 'sendMessage')
+        .mockImplementation(sendMessageMock);
+      jest
+        .spyOn(_, 'transformTechRecord')
+        .mockImplementation(transformRecordMock);
+
+      await edhMarshaller(techEvent, ctx, () => { return; });
+
+      expect(transformRecordMock).toHaveBeenCalledTimes(0);
+      expect(sendMessageMock).toHaveBeenCalledWith(
+        JSON.stringify({
+          eventSourceARN: 'technical-records',
+          eventName: 'INSERT',
+          dynamodb: { some: 'thing' },
+        }),
+        'cvs-edh-dispatcher-technical_records-local-queue',
+      );
+      expect(sendMessageMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('with good flat-tech-records event', () => {
+    const flatTechEvent = {
+      Records: [
+        {
+          eventSourceARN: 'flat-tech-records',
+          eventName: 'INSERT',
+          dynamodb: {
+            some: 'thing',
+          },
+        },
+      ],
+    };
+
+    it('should load onto SQS if PROCESS_FLAT_TECH_RECORDS is true', async () => {
+      process.env.PROCESS_FLAT_TECH_RECORDS = 'true';
+
+      const sendMessageMock = jest.fn().mockResolvedValue('howdy');
+      const transformRecordMock = jest.fn();
+      jest
+        .spyOn(SQSService.prototype, 'sendMessage')
+        .mockImplementation(sendMessageMock);
+      jest
+        .spyOn(_, 'transformTechRecord')
+        .mockImplementation(transformRecordMock);
+
+      await edhMarshaller(flatTechEvent, ctx, () => { return; });
+
+      expect(transformRecordMock).toHaveBeenCalledTimes(1);
+      expect(sendMessageMock).toHaveBeenCalledWith(
+        JSON.stringify({
+          eventSourceARN: 'flat-tech-records',
+          eventName: 'INSERT',
+          dynamodb: { some: 'thing' },
+        }),
+        'cvs-edh-dispatcher-technical_records-local-queue',
+      );
+      expect(sendMessageMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not load onto SQS if PROCESS_FLAT_TECH_RECORDS is false', async () => {
+      process.env.PROCESS_FLAT_TECH_RECORDS = 'false';
+
+      const sendMessageMock = jest.fn().mockResolvedValue('howdy');
+      const transformRecordMock = jest.fn();
+      jest
+        .spyOn(SQSService.prototype, 'sendMessage')
+        .mockImplementation(sendMessageMock);
+      jest
+        .spyOn(_, 'transformTechRecord')
+        .mockImplementation(transformRecordMock);
+
+      await edhMarshaller(flatTechEvent, ctx, () => { return; });
+
+      expect(transformRecordMock).toHaveBeenCalledTimes(0);
+      expect(sendMessageMock).toHaveBeenCalledTimes(0);
+    });
+  });
+  
+  describe('with good test result event', () => {
     const event = {
       Records: [
         {
@@ -43,6 +153,7 @@ describe('edhMarshaller Function', () => {
         },
       ],
     };
+
     it('should invoke SQS service with correct params', async () => {
       const sendMessageMock = jest.fn().mockResolvedValue('howdy');
       jest
@@ -71,20 +182,21 @@ describe('edhMarshaller Function', () => {
         jest.spyOn(console, 'log');
 
         try {
-          await edhMarshaller(event, ctx, () => {
-            return;
-          });
+          await edhMarshaller(event, ctx, () => {return;});
         } catch (e) {
-          expect(console.log).toHaveBeenCalledWith('records', [{
-            dynamodb: {
-              some: 'thing',
-            },
-            eventName: 'INSERT',
-            eventSourceARN: 'test-results',
-          }]);
-          expect(console.error).toHaveBeenCalledWith('It broke');
+          // eslint-disable-next-line jest/no-conditional-expect
           expect(e).toBe('It broke');
         }
+
+        expect(console.log).toHaveBeenCalledWith('records', [{
+          dynamodb: {
+            some: 'thing',
+          },
+          eventName: 'INSERT',
+          eventSourceARN: 'test-results',
+        }]);
+        expect(console.error).toHaveBeenCalledWith('It broke');
+
       });
     });
   });

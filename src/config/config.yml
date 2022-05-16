@@ -20,3 +20,5 @@ targets:
     queueName: cvs-edh-dispatcher-activities-${BRANCH}-queue
   technical-records:
     queueName: cvs-edh-dispatcher-technical_records-${BRANCH}-queue
+  flat-tech-records:
+    queueName: cvs-edh-dispatcher-technical_records-${BRANCH}-queue
