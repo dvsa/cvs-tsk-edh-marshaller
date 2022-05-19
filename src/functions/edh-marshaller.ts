@@ -45,12 +45,15 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<void 
       // PROCESS_FLAT_TECH_RECORDS toggles whether flat-tech-records or technical-records record stream events populate the NOP
       if (record.eventSourceARN.includes('flat-tech-records')) {
         if (!processFlatTechRecords) {
+          debugOnlyLog('Ignoring flat-tech-record stream event');
           continue;
         }
         transformTechRecord(record);
+        debugOnlyLog('Succesfully transformed flat-tech-record stream event');
       }
 
       if (record.eventSourceARN.includes('technical-records') && processFlatTechRecords) {
+        debugOnlyLog('Ignoring technical-record stream event');
         continue;
       }
   

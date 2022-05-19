@@ -1,8 +1,9 @@
 import { DynamoDBRecord, AttributeValue } from 'aws-lambda';
 import { DynamoDB } from 'aws-sdk';
+import { debugOnlyLog } from './utilities';
 
 interface LegacyKeyStructure {
-  [index: string]: string | boolean | number | Array<string> | Array<object> | LegacyKeyStructure;
+  [index: string]: string | boolean | number | Array<string> | Array<LegacyKeyStructure> | LegacyKeyStructure;
 }
 
 interface NewKeyStructure {
@@ -10,7 +11,7 @@ interface NewKeyStructure {
 }
 
 interface LegacyTechRecord extends LegacyKeyStructure {
-  techRecord: object[]
+  techRecord: LegacyKeyStructure[]
 }
 
 const nestItem = (record: LegacyKeyStructure, key: string, value: string | number | boolean | string[], position: number) => {
@@ -35,28 +36,37 @@ const nestItem = (record: LegacyKeyStructure, key: string, value: string | numbe
   return record;
 };
 
-export const transformTechRecord = (record: DynamoDBRecord) => {
+const transformImage = (image: NewKeyStructure) => {
   const vehicle = {} as LegacyTechRecord;
-
   vehicle.techRecord = [];
 
   const legacyRecord = {} as LegacyKeyStructure;
 
-  if (record.dynamodb?.NewImage) {
-    const NewImage: NewKeyStructure = DynamoDB.Converter.unmarshall(record.dynamodb.NewImage);
-    for (const [key, value] of Object.entries(NewImage)) {
-      if (key.indexOf('_') === -1 && !vehicle[key.toString()]) {
-        vehicle[key.toString()] = value;
-        continue;
-      }
-      nestItem(legacyRecord, key, value, 0);
+  for (const [key, value] of Object.entries(image)) {
+    if (key.indexOf('_') === -1 && !vehicle[key.toString()]) {
+      vehicle[key.toString()] = value;
+      continue;
     }
+    nestItem(legacyRecord, key, value, 0);
+  }
 
-    // We don't want the createdTimestamp range key of the new data structure being put into the legacy data structure
-    delete vehicle.createdTimestamp;
+  delete vehicle.createdTimestamp;
 
-    vehicle.techRecord.push(legacyRecord.techRecord as LegacyKeyStructure);
+  vehicle.techRecord.push(legacyRecord.techRecord as LegacyKeyStructure);
 
-    record.dynamodb.NewImage = (DynamoDB.Converter.marshall(vehicle) as { [key: string]: AttributeValue; });
+  return (DynamoDB.Converter.marshall(vehicle) as { [key: string]: AttributeValue; });
+};
+
+export const transformTechRecord = (record: DynamoDBRecord) => {
+  if (record.dynamodb?.OldImage) {
+    debugOnlyLog('Transforming old image of flat-tech-record');
+    const OldImage: NewKeyStructure = DynamoDB.Converter.unmarshall(record.dynamodb.OldImage);
+    record.dynamodb.OldImage = transformImage(OldImage);
+  }
+
+  if (record.dynamodb?.NewImage) {
+    debugOnlyLog('Transforming new image of flat-tech-record');
+    const NewImage: NewKeyStructure = DynamoDB.Converter.unmarshall(record.dynamodb.NewImage);
+    record.dynamodb.NewImage = transformImage(NewImage);
   }
 };
