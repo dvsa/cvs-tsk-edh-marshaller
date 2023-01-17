@@ -370,6 +370,9 @@ const dbRecordOld: DynamoDBRecord = {
               'ntaNumber': {
                 'S': '123456',
               },
+              'numberOfWheelsDriven': {
+                'NULL': true,
+              },
               'reasonForCreation': {
                 'S': 'new vehicle',
               },
@@ -710,6 +713,9 @@ const dbRecordNew: DynamoDBRecord = {
       },
       'techRecord_ntaNumber': {
         'S': '123456',
+      },
+      'techRecord_numberOfWheelsDriven': {
+        'NULL': true,
       },
       'techRecord_reasonForCreation': {
         'S': 'new vehicle',

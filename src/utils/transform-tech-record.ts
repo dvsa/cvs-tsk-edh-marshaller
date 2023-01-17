@@ -69,4 +69,5 @@ export const transformTechRecord = (record: DynamoDBRecord) => {
     const NewImage: NewKeyStructure = DynamoDB.Converter.unmarshall(record.dynamodb.NewImage);
     record.dynamodb.NewImage = transformImage(NewImage);
   }
+  debugOnlyLog('Succesfully transformed flat-tech-record stream record');
 };

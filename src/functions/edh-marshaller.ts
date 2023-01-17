@@ -3,12 +3,14 @@ import {
   DynamoDBStreamEvent,
   Handler,
 } from 'aws-lambda';
-import { AWSError, SQS } from 'aws-sdk';
-import { SQSService } from '../services/sqs';
-import { PromiseResult } from 'aws-sdk/lib/request';
-import { SendMessageResult } from 'aws-sdk/clients/sqs';
-import { debugOnlyLog, getTargetQueueFromSourceARN, getTechRecordEnvVar } from '../utils/utilities';
+import { SQS } from 'aws-sdk';
+import AWSXray from 'aws-xray-sdk';
+import { SendMessageRequest } from 'aws-sdk/clients/sqs';
+import { debugOnlyLog, getTechRecordEnvVar } from '../utils/utilities';
 import { transformTechRecord } from '../utils/transform-tech-record';
+import { BatchItemFailuresResponse } from '../models/BatchItemFailures';
+
+let sqs: SQS;
 
 /**
  * λ function to process a DynamoDB stream and forward it to an appropriate SQS queue.
@@ -16,59 +18,104 @@ import { transformTechRecord } from '../utils/transform-tech-record';
  * @param context - λ Context
  * @param callback - callback function
  */
-const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<void | Array<PromiseResult<SendMessageResult, AWSError>>> => {
-  const processFlatTechRecords: boolean = getTechRecordEnvVar();
+const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<BatchItemFailuresResponse> => {
+  const res: BatchItemFailuresResponse = {
+    batchItemFailures: [],
+  };
 
   if (!event) {
     console.error('ERROR: event is not defined.');
-    return undefined;
+    return res;
   }
+
   const records: DynamoDBRecord[] = event.Records;
+
   if (!records || !records.length) {
     console.error('ERROR: No Records in event: ', event);
-    return undefined;
+    return res;
   }
 
   debugOnlyLog('Records: ', records);
 
-  // Instantiate the Simple Queue Service
-  const sqsService: SQSService = new SQSService(new SQS());
-  const sendMessagePromises: Promise<PromiseResult<SendMessageResult, AWSError>>[] = [];
+  const sendMessagePromises = [];
 
-  for (const record of records) {
-    debugOnlyLog('Record: ', record);
-
-    if (record.eventSourceARN) {
-      debugOnlyLog('New image: ', record.dynamodb?.NewImage);
-      const targetQueue = getTargetQueueFromSourceARN(record.eventSourceARN);
-
-      // PROCESS_FLAT_TECH_RECORDS toggles whether flat-tech-records or technical-records record stream events populate the NOP
-      if (record.eventSourceARN.includes('flat-tech-records')) {
-        if (!processFlatTechRecords) {
-          debugOnlyLog('Ignoring flat-tech-record stream event');
-          continue;
-        }
-        transformTechRecord(record);
-        debugOnlyLog('Succesfully transformed flat-tech-record stream event');
-      }
-
-      if (record.eventSourceARN.includes('technical-records') && processFlatTechRecords) {
-        debugOnlyLog('Ignoring technical-record stream event');
-        continue;
-      }
+  if (!sqs) {
+    sqs = AWSXray.captureAWSClient(
+      new SQS({
+        region: 'eu-west-1',
+        apiVersion: '2012-11-05',
+      }),
+    );
+  }
   
-      debugOnlyLog('Target Queue', targetQueue);
-      sendMessagePromises.push(sqsService.sendMessage(JSON.stringify(record), targetQueue));
+  for (const record of records) {
+    if(!record.eventID) {
+      console.error(`Unable to generate SQS event for record: ${JSON.stringify(record)}, no eventID within payload`)
+      continue;
     }
+
+    const id = record.eventID
+
+    debugOnlyLog('Record: ', record);
+    debugOnlyLog('New image: ', record.dynamodb?.NewImage);
+
+    const params = getSqsParams(record);
+
+    if (!params) {
+      console.error(`Unable to generate SQS event for record: ${JSON.stringify(record)}`);
+      continue;
+    }
+
+    sendMessagePromises.push(
+      sqs.sendMessage(params).promise()
+        .then(() => {
+          debugOnlyLog('Succesfully sent SQS message');
+        })
+        .catch(() => {
+          console.error(`Failed to push SQS message for record: ${JSON.stringify(record)}`);
+          res.batchItemFailures.push({ itemIdentifier: id });
+        }),
+    );
   }
 
-  return Promise.all(sendMessagePromises).catch((error: AWSError) => {
-    console.error(error);
-    console.log('records', records);
-    if (error.code !== 'InvalidParameterValue') {
-      throw error;
+  await Promise.allSettled(sendMessagePromises);
+
+  return res;
+};
+
+const getSqsParams = (record: DynamoDBRecord): SendMessageRequest | undefined => {
+  if (record.eventSourceARN && record.eventID) {
+    const processFlatTechRecords: boolean = getTechRecordEnvVar();
+
+    let queueUrl: string | undefined = undefined;
+  
+    if (record.eventSourceARN.includes('test-results')) {
+      queueUrl = process.env.TEST_RESULT_DISPATCHER_SQS_URL;
+    } else if (record.eventSourceARN.includes('flat-tech-records')) {
+      if (!processFlatTechRecords) {
+        debugOnlyLog('Ignoring flat-tech-record stream event');
+        return undefined;
+      }
+      transformTechRecord(record);
+      queueUrl = process.env.TECHNICAL_RECORDS_DISPATCHER_SQS_URL;
+    } else if (record.eventSourceARN.includes('technical-records')) {
+      if (processFlatTechRecords) {
+        debugOnlyLog('Ignoring technical-record stream event');
+        return undefined;
+      }
+      queueUrl = process.env.TECHNICAL_RECORDS_DISPATCHER_SQS_URL;
     }
-  });
+  
+    if (!queueUrl) {
+      console.error(`Unable to retrieve destination SQS queue URL for event originating from eventSourceArn: ${record.eventSourceARN}`);
+      return undefined;
+    }
+
+    return {
+      MessageBody: JSON.stringify(record),
+      QueueUrl: queueUrl,
+    };
+  }
 };
 
 export { edhMarshaller };

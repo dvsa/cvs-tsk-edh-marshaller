@@ -59,7 +59,7 @@
     "@commitlint/config-conventional": "^16.2.4",
     "@dvsa/eslint-config-ts": "^2.4.0",
     "@types/aws-lambda": "^8.10.97",
-    "@types/jest": "^27.5.0",
+    "@types/jest": "^29.2.5",
     "@types/jest-plugin-context": "^2.9.2",
     "@types/node": "^16.11.33",
     "@typescript-eslint/eslint-plugin": "^5.23.0",
@@ -79,7 +79,7 @@
     "serverless": "^3.17.0",
     "serverless-plugin-tracing": "^2.0.0",
     "serverless-plugin-typescript": "^2.1.2",
-    "ts-jest": "^28.0.2",
+    "ts-jest": "^29.0.5",
     "ts-node-register": "^1.0.0",
     "typescript": "^4.6.4"
   },

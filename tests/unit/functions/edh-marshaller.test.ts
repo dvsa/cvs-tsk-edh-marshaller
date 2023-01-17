@@ -1,14 +1,39 @@
 import { edhMarshaller } from '../../../src/functions/edh-marshaller';
-import { SQSService } from '../../../src/services/sqs';
 import { Context } from 'aws-lambda';
 import * as _ from '../../../src/utils/transform-tech-record';
+import AWSXray from 'aws-xray-sdk';
+import { SQS, AWSError, Service, Response } from 'aws-sdk';
+import { SendMessageRequest } from 'aws-sdk/clients/sqs';
+import { BatchItemFailuresResponse } from '../../../src/models/BatchItemFailures';
+
+type PromiseResult<D, E> = D & { $response: Response<D, E> };
+
+const mSendMessage = jest.fn();
+
+class SqsMock extends Service {
+  sendMessage(params: SendMessageRequest) {
+    mSendMessage(params);
+
+    return { 
+      promise: jest.fn().mockImplementation(() => {
+        if (params.QueueUrl === 'FAIL') {
+          return Promise.reject(<PromiseResult<SQS.SendMessageResult, AWSError>>{});
+        }
+        return Promise.resolve(<PromiseResult<SQS.SendMessageResult, AWSError>>{});
+      }),
+    };
+  }
+}
 
 describe('edhMarshaller Function', () => {
   let ctx: Context;
 
-  afterAll(() => {
-    jest.restoreAllMocks();
-    jest.resetModules();
+  jest.spyOn(AWSXray, 'captureAWSClient').mockImplementation(() => {
+    return new SqsMock();
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('if the event is undefined', () => {
@@ -39,6 +64,7 @@ describe('edhMarshaller Function', () => {
     const techEvent = {
       Records: [
         {
+          eventID: '2222',
           eventSourceARN: 'technical-records',
           eventName: 'INSERT',
           dynamodb: {
@@ -50,24 +76,18 @@ describe('edhMarshaller Function', () => {
     
     it('should not load onto SQS if PROCESS_FLAT_TECH_RECORDS is true', async () => {
       process.env.PROCESS_FLAT_TECH_RECORDS = 'true';
-      const sendMessageMock = jest.fn().mockResolvedValue('howdy');
-      jest
-        .spyOn(SQSService.prototype, 'sendMessage')
-        .mockImplementation(sendMessageMock);
-
+      process.env.TECHNICAL_RECORDS_DISPATCHER_SQS_URL = 'cvs-edh-dispatcher-technical_records-local-queue';
 
       await edhMarshaller(techEvent, ctx, () => { return; });
 
-      expect(sendMessageMock).toHaveBeenCalledTimes(0);
+      expect(mSendMessage).toHaveBeenCalledTimes(0);
     });
 
     it('should load onto SQS if PROCESS_FLAT_TECH_RECORDS is false', async () => {
       process.env.PROCESS_FLAT_TECH_RECORDS = 'false';
-      const sendMessageMock = jest.fn().mockResolvedValue('howdy');
+      process.env.TECHNICAL_RECORDS_DISPATCHER_SQS_URL = 'cvs-edh-dispatcher-technical_records-local-queue';
       const transformRecordMock = jest.fn();
-      jest
-        .spyOn(SQSService.prototype, 'sendMessage')
-        .mockImplementation(sendMessageMock);
+
       jest
         .spyOn(_, 'transformTechRecord')
         .mockImplementation(transformRecordMock);
@@ -75,15 +95,16 @@ describe('edhMarshaller Function', () => {
       await edhMarshaller(techEvent, ctx, () => { return; });
 
       expect(transformRecordMock).toHaveBeenCalledTimes(0);
-      expect(sendMessageMock).toHaveBeenCalledWith(
-        JSON.stringify({
+      expect(mSendMessage).toHaveBeenCalledWith({
+        MessageBody: JSON.stringify({
+          eventID: '2222',
           eventSourceARN: 'technical-records',
           eventName: 'INSERT',
           dynamodb: { some: 'thing' },
         }),
-        'cvs-edh-dispatcher-technical_records-local-queue',
-      );
-      expect(sendMessageMock).toHaveBeenCalledTimes(1);
+        QueueUrl: 'cvs-edh-dispatcher-technical_records-local-queue',
+      });
+      expect(mSendMessage).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -91,6 +112,7 @@ describe('edhMarshaller Function', () => {
     const flatTechEvent = {
       Records: [
         {
+          eventID: '2222',
           eventSourceARN: 'flat-tech-records',
           eventName: 'INSERT',
           dynamodb: {
@@ -102,12 +124,9 @@ describe('edhMarshaller Function', () => {
 
     it('should load onto SQS if PROCESS_FLAT_TECH_RECORDS is true', async () => {
       process.env.PROCESS_FLAT_TECH_RECORDS = 'true';
+      process.env.TECHNICAL_RECORDS_DISPATCHER_SQS_URL = 'cvs-edh-dispatcher-technical_records-local-queue';
 
-      const sendMessageMock = jest.fn().mockResolvedValue('howdy');
       const transformRecordMock = jest.fn();
-      jest
-        .spyOn(SQSService.prototype, 'sendMessage')
-        .mockImplementation(sendMessageMock);
       jest
         .spyOn(_, 'transformTechRecord')
         .mockImplementation(transformRecordMock);
@@ -115,25 +134,23 @@ describe('edhMarshaller Function', () => {
       await edhMarshaller(flatTechEvent, ctx, () => { return; });
 
       expect(transformRecordMock).toHaveBeenCalledTimes(1);
-      expect(sendMessageMock).toHaveBeenCalledWith(
-        JSON.stringify({
+      expect(mSendMessage).toHaveBeenCalledWith({
+        MessageBody: JSON.stringify({
+          eventID: '2222',
           eventSourceARN: 'flat-tech-records',
           eventName: 'INSERT',
           dynamodb: { some: 'thing' },
         }),
-        'cvs-edh-dispatcher-technical_records-local-queue',
-      );
-      expect(sendMessageMock).toHaveBeenCalledTimes(1);
+        QueueUrl: 'cvs-edh-dispatcher-technical_records-local-queue',
+      });
+      expect(mSendMessage).toHaveBeenCalledTimes(1);
     });
 
     it('should not load onto SQS if PROCESS_FLAT_TECH_RECORDS is false', async () => {
+      process.env.TECHNICAL_RECORDS_DISPATCHER_SQS_URL = 'cvs-edh-dispatcher-technical_records-local-queue';
       process.env.PROCESS_FLAT_TECH_RECORDS = 'false';
 
-      const sendMessageMock = jest.fn().mockResolvedValue('howdy');
       const transformRecordMock = jest.fn();
-      jest
-        .spyOn(SQSService.prototype, 'sendMessage')
-        .mockImplementation(sendMessageMock);
       jest
         .spyOn(_, 'transformTechRecord')
         .mockImplementation(transformRecordMock);
@@ -141,7 +158,7 @@ describe('edhMarshaller Function', () => {
       await edhMarshaller(flatTechEvent, ctx, () => { return; });
 
       expect(transformRecordMock).toHaveBeenCalledTimes(0);
-      expect(sendMessageMock).toHaveBeenCalledTimes(0);
+      expect(mSendMessage).toHaveBeenCalledTimes(0);
     });
   });
   
@@ -149,6 +166,7 @@ describe('edhMarshaller Function', () => {
     const event = {
       Records: [
         {
+          eventID: '2222',
           eventSourceARN: 'test-results',
           eventName: 'INSERT',
           dynamodb: {
@@ -159,43 +177,84 @@ describe('edhMarshaller Function', () => {
     };
 
     it('should invoke SQS service with correct params', async () => {
-      const sendMessageMock = jest.fn().mockResolvedValue('howdy');
-      jest
-        .spyOn(SQSService.prototype, 'sendMessage')
-        .mockImplementation(sendMessageMock);
+      process.env.TEST_RESULT_DISPATCHER_SQS_URL = 'cvs-edh-dispatcher-test-results-local-queue';
+      process.env.PROCESS_FLAT_TECH_RECORDS = 'false';
 
       await edhMarshaller(event, ctx, () => { return; });
 
-      expect(sendMessageMock).toHaveBeenCalledWith(
-        JSON.stringify({
+      expect(mSendMessage).toHaveBeenCalledTimes(1);
+      expect(mSendMessage).toHaveBeenCalledWith({
+        MessageBody: JSON.stringify({
+          eventID: '2222',
           eventSourceARN: 'test-results',
           eventName: 'INSERT',
           dynamodb: { some: 'thing' },
         }),
-        'cvs-edh-dispatcher-test-results-local-queue',
-      );
-      expect(sendMessageMock).toHaveBeenCalledTimes(1);
+        QueueUrl: 'cvs-edh-dispatcher-test-results-local-queue',
+      });
     });
 
     describe('when SQService throws an error', () => {
       it('should throw the error up', async () => {
-        jest
-          .spyOn(SQSService.prototype, 'sendMessage')
-          .mockRejectedValue('It broke');
-        jest.spyOn(console, 'error');
-        jest.spyOn(console, 'log');
+        process.env.TEST_RESULT_DISPATCHER_SQS_URL = 'FAIL';
+        process.env.PROCESS_FLAT_TECH_RECORDS = 'false';
 
-        await expect(edhMarshaller(event, ctx, () => {return;})).rejects.toBe('It broke');
-        expect(console.log).toHaveBeenCalledWith('records', [{
+        jest.spyOn(console, 'error');
+
+        const result = await edhMarshaller(event, ctx, () => {return;}) as BatchItemFailuresResponse;
+
+        expect(result).toEqual({ batchItemFailures: [{ itemIdentifier: '2222' }] });
+        expect(mSendMessage).toHaveBeenCalledTimes(1);
+        expect(console.error).toHaveBeenCalledWith(`Failed to push SQS message for record: ${JSON.stringify(event.Records[0])}`);
+      });
+    });
+  });
+
+  describe('with multiple events', () => {
+    const events = {
+      Records: [
+        {
+          eventID: '4321',
+          eventSourceARN: 'technical-records',
+          eventName: 'INSERT',
           dynamodb: {
             some: 'thing',
           },
-          eventName: 'INSERT',
+        },
+        {
+          eventID: '1111',
           eventSourceARN: 'test-results',
-        }]);
-        expect(console.error).toHaveBeenCalledWith('It broke');
+          eventName: 'INSERT',
+          dynamodb: {
+            some: 'thing',
+          },
+        },
+        {
+          eventID: '1234',
+          eventSourceARN: 'technical-records',
+          eventName: 'INSERT',
+          dynamodb: {
+            some: 'thing',
+          },
+        },
+      ],
+    };
 
+    describe('when SQS throws an error once', () => {
+      it('processes rest of records and returns eventID of failed for retry', async () => {
+        process.env.TEST_RESULT_DISPATCHER_SQS_URL = 'FAIL';
+        process.env.TECHNICAL_RECORDS_DISPATCHER_SQS_URL = 'SUCCESS';
+        process.env.PROCESS_FLAT_TECH_RECORDS = 'false';
+
+        jest.spyOn(console, 'error');
+
+        const result = await edhMarshaller(events, ctx, () => {return;}) as BatchItemFailuresResponse;
+
+        expect(mSendMessage).toHaveBeenCalledTimes(3);
+        expect(result).toEqual({ batchItemFailures: [{ itemIdentifier: '1111' }] });
+        expect(console.error).toHaveBeenCalledWith(`Failed to push SQS message for record: ${JSON.stringify(events.Records[1])}`);
       });
     });
   });
 });
+
