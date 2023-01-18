@@ -49,12 +49,12 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<Batch
   }
   
   for (const record of records) {
-    if(!record.eventID) {
-      console.error(`Unable to generate SQS event for record: ${JSON.stringify(record)}, no eventID within payload`)
+    if (!record.eventID) {
+      console.error(`Unable to generate SQS event for record: ${JSON.stringify(record)}, no eventID within payload`);
       continue;
     }
 
-    const id = record.eventID
+    const id = record.eventID;
 
     debugOnlyLog('Record: ', record);
     debugOnlyLog('New image: ', record.dynamodb?.NewImage);
