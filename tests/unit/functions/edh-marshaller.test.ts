@@ -76,7 +76,7 @@ describe('edhMarshaller Function', () => {
     
     it('should not load onto SQS if PROCESS_FLAT_TECH_RECORDS is true', async () => {
       process.env.PROCESS_FLAT_TECH_RECORDS = 'true';
-      process.env.TECHNICAL_RECORDS_DISPATCHER_SQS_URL = 'cvs-edh-dispatcher-technical_records-local-queue';
+      process.env.TECHNICAL_RECORDS_UPDATE_STORE_SQS_URL = 'cvs-edh-dispatcher-technical_records-local-queue';
 
       await edhMarshaller(techEvent, ctx, () => { return; });
 
@@ -85,7 +85,7 @@ describe('edhMarshaller Function', () => {
 
     it('should load onto SQS if PROCESS_FLAT_TECH_RECORDS is false', async () => {
       process.env.PROCESS_FLAT_TECH_RECORDS = 'false';
-      process.env.TECHNICAL_RECORDS_DISPATCHER_SQS_URL = 'cvs-edh-dispatcher-technical_records-local-queue';
+      process.env.TECHNICAL_RECORDS_UPDATE_STORE_SQS_URL = 'cvs-edh-dispatcher-technical_records-local-queue';
       const transformRecordMock = jest.fn();
 
       jest
@@ -124,7 +124,7 @@ describe('edhMarshaller Function', () => {
 
     it('should load onto SQS if PROCESS_FLAT_TECH_RECORDS is true', async () => {
       process.env.PROCESS_FLAT_TECH_RECORDS = 'true';
-      process.env.TECHNICAL_RECORDS_DISPATCHER_SQS_URL = 'cvs-edh-dispatcher-technical_records-local-queue';
+      process.env.TECHNICAL_RECORDS_UPDATE_STORE_SQS_URL = 'cvs-edh-dispatcher-technical_records-local-queue';
 
       const transformRecordMock = jest.fn();
       jest
@@ -147,7 +147,7 @@ describe('edhMarshaller Function', () => {
     });
 
     it('should not load onto SQS if PROCESS_FLAT_TECH_RECORDS is false', async () => {
-      process.env.TECHNICAL_RECORDS_DISPATCHER_SQS_URL = 'cvs-edh-dispatcher-technical_records-local-queue';
+      process.env.TECHNICAL_RECORDS_UPDATE_STORE_SQS_URL = 'cvs-edh-dispatcher-technical_records-local-queue';
       process.env.PROCESS_FLAT_TECH_RECORDS = 'false';
 
       const transformRecordMock = jest.fn();
@@ -177,7 +177,7 @@ describe('edhMarshaller Function', () => {
     };
 
     it('should invoke SQS service with correct params', async () => {
-      process.env.TEST_RESULT_DISPATCHER_SQS_URL = 'cvs-edh-dispatcher-test-results-local-queue';
+      process.env.TEST_RESULT_UPDATE_STORE_SQS_URL = 'cvs-edh-dispatcher-test-results-local-queue';
       process.env.PROCESS_FLAT_TECH_RECORDS = 'false';
 
       await edhMarshaller(event, ctx, () => { return; });
@@ -196,7 +196,7 @@ describe('edhMarshaller Function', () => {
 
     describe('when SQService throws an error', () => {
       it('should throw the error up', async () => {
-        process.env.TEST_RESULT_DISPATCHER_SQS_URL = 'FAIL';
+        process.env.TEST_RESULT_UPDATE_STORE_SQS_URL = 'FAIL';
         process.env.PROCESS_FLAT_TECH_RECORDS = 'false';
 
         jest.spyOn(console, 'error');
@@ -242,8 +242,8 @@ describe('edhMarshaller Function', () => {
 
     describe('when SQS throws an error once', () => {
       it('processes rest of records and returns eventID of failed for retry', async () => {
-        process.env.TEST_RESULT_DISPATCHER_SQS_URL = 'FAIL';
-        process.env.TECHNICAL_RECORDS_DISPATCHER_SQS_URL = 'SUCCESS';
+        process.env.TEST_RESULT_UPDATE_STORE_SQS_URL = 'FAIL';
+        process.env.TECHNICAL_RECORDS_UPDATE_STORE_SQS_URL = 'SUCCESS';
         process.env.PROCESS_FLAT_TECH_RECORDS = 'false';
 
         jest.spyOn(console, 'error');
