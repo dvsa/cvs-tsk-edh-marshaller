@@ -90,20 +90,20 @@ const getSqsParams = (record: DynamoDBRecord): SendMessageRequest | undefined =>
     let queueUrl: string | undefined = undefined;
   
     if (record.eventSourceARN.includes('test-results')) {
-      queueUrl = process.env.TEST_RESULT_DISPATCHER_SQS_URL;
+      queueUrl = process.env.TEST_RESULT_UPDATE_STORE_SQS_URL;
     } else if (record.eventSourceARN.includes('flat-tech-records')) {
       if (!processFlatTechRecords) {
         debugOnlyLog('Ignoring flat-tech-record stream event');
         return undefined;
       }
       transformTechRecord(record);
-      queueUrl = process.env.TECHNICAL_RECORDS_DISPATCHER_SQS_URL;
+      queueUrl = process.env.TECHNICAL_RECORDS_UPDATE_STORE_SQS_URL;
     } else if (record.eventSourceARN.includes('technical-records')) {
       if (processFlatTechRecords) {
         debugOnlyLog('Ignoring technical-record stream event');
         return undefined;
       }
-      queueUrl = process.env.TECHNICAL_RECORDS_DISPATCHER_SQS_URL;
+      queueUrl = process.env.TECHNICAL_RECORDS_UPDATE_STORE_SQS_URL;
     }
   
     if (!queueUrl) {
