@@ -17,7 +17,7 @@ class SqsMock extends Service {
     return { 
       promise: jest.fn().mockImplementation(() => params.QueueUrl === 'FAIL' 
         ? Promise.reject(<PromiseResult<SQS.SendMessageResult, AWSError>>{})
-        : Promise.resolve(<PromiseResult<SQS.SendMessageResult, AWSError>>{})
+        : Promise.resolve(<PromiseResult<SQS.SendMessageResult, AWSError>>{}),
       ),
     };
   }
