@@ -6,7 +6,7 @@ import {
 import { SQS } from 'aws-sdk';
 import AWSXray from 'aws-xray-sdk';
 import { SendMessageRequest } from 'aws-sdk/clients/sqs';
-import { debugOnlyLog, getTechRecordEnvVar } from '../utils/utilities';
+import { debugOnlyLog } from '../utils/utilities';
 import { transformTechRecord } from '../utils/transform-tech-record';
 import { BatchItemFailuresResponse } from '../models/BatchItemFailures';
 
@@ -83,21 +83,19 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<Batch
 
 const getSqsParams = (record: DynamoDBRecord): SendMessageRequest | undefined => {
   if (record.eventSourceARN && record.eventID) {
-    const processFlatTechRecords: boolean = getTechRecordEnvVar();
-
     let queueUrl: string | undefined = undefined;
   
     if (record.eventSourceARN.includes('test-results')) {
       queueUrl = process.env.TEST_RESULT_UPDATE_STORE_SQS_URL;
     } else if (record.eventSourceARN.includes('flat-tech-records')) {
-      if (!processFlatTechRecords) {
+      if (process.env.PROCESS_FLAT_TECH_RECORDS != 'true') {
         debugOnlyLog('Ignoring flat-tech-record stream event');
         return undefined;
       }
       transformTechRecord(record);
       queueUrl = process.env.TECHNICAL_RECORDS_UPDATE_STORE_SQS_URL;
     } else if (record.eventSourceARN.includes('technical-records')) {
-      if (processFlatTechRecords) {
+      if (process.env.PROCESS_FLAT_TECH_RECORDS == 'true') {
         debugOnlyLog('Ignoring technical-record stream event');
         return undefined;
       }
