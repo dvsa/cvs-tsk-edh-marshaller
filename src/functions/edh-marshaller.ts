@@ -82,7 +82,7 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<Batch
 
 const getSqsParams = (record: DynamoDBRecord): SendMessageRequest | undefined => {
   if (!record.eventSourceARN) { 
-    console.error(`Unable to generate SQS event for record: ${JSON.stringify(record)} eventSourceArn must be defined`)
+    console.error(`Unable to generate SQS event for record: ${JSON.stringify(record)} eventSourceArn must be defined`);
     return undefined;
   }
 
