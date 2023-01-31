@@ -62,7 +62,6 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<Batch
     const params = getSqsParams(record);
 
     if (!params) {
-      console.error(`Unable to generate SQS event for record: ${JSON.stringify(record)}`);
       continue;
     }
 
@@ -82,36 +81,40 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<Batch
 };
 
 const getSqsParams = (record: DynamoDBRecord): SendMessageRequest | undefined => {
-  if (record.eventSourceARN && record.eventID) {
-    let queueUrl: string | undefined = undefined;
-  
-    if (record.eventSourceARN.includes('test-results')) {
-      queueUrl = process.env.TEST_RESULT_UPDATE_STORE_SQS_URL;
-    } else if (record.eventSourceARN.includes('flat-tech-records')) {
-      if (process.env.PROCESS_FLAT_TECH_RECORDS != 'true') {
-        debugOnlyLog('Ignoring flat-tech-record stream event');
-        return undefined;
-      }
-      transformTechRecord(record);
-      queueUrl = process.env.TECHNICAL_RECORDS_UPDATE_STORE_SQS_URL;
-    } else if (record.eventSourceARN.includes('technical-records')) {
-      if (process.env.PROCESS_FLAT_TECH_RECORDS == 'true') {
-        debugOnlyLog('Ignoring technical-record stream event');
-        return undefined;
-      }
-      queueUrl = process.env.TECHNICAL_RECORDS_UPDATE_STORE_SQS_URL;
-    }
-  
-    if (!queueUrl) {
-      console.error(`Unable to retrieve destination SQS queue URL for event originating from eventSourceArn: ${record.eventSourceARN}`);
+  if (!record.eventSourceARN) { 
+    console.error(`Unable to generate SQS event for record: ${JSON.stringify(record)} eventSourceArn must be defined`)
+    return undefined;
+  }
+
+  let queueUrl: string | undefined = undefined;
+
+  if (record.eventSourceARN.includes('test-results')) {
+    queueUrl = process.env.TEST_RESULT_UPDATE_STORE_SQS_URL;
+  } else if (record.eventSourceARN.includes('flat-tech-records')) {
+    if (process.env.PROCESS_FLAT_TECH_RECORDS != 'true') {
+      console.log('Ignoring flat-tech-record stream event');
       return undefined;
     }
-
-    return {
-      MessageBody: JSON.stringify(record),
-      QueueUrl: queueUrl,
-    };
+    transformTechRecord(record);
+    queueUrl = process.env.TECHNICAL_RECORDS_UPDATE_STORE_SQS_URL;
+  } else if (record.eventSourceARN.includes('technical-records')) {
+    if (process.env.PROCESS_FLAT_TECH_RECORDS == 'true') {
+      console.log('Ignoring technical-record stream event');
+      return undefined;
+    }
+    queueUrl = process.env.TECHNICAL_RECORDS_UPDATE_STORE_SQS_URL;
   }
+
+  if (!queueUrl) {
+    console.error(`Unable to retrieve destination SQS queue URL for record: ${JSON.stringify(record)}`);
+    return undefined;
+  }
+
+  return {
+    MessageBody: JSON.stringify(record),
+    QueueUrl: queueUrl,
+  };
+  
 };
 
 export { edhMarshaller };
