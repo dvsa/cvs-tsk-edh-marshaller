@@ -54,6 +54,70 @@ describe('edhMarshaller Function', () => {
     });
   });
 
+  describe('if record has no eventID', () => {
+    it('should log an error', async () => {
+      const event = {
+        Records: [
+          {
+            eventSourceARN: 'flat-tech-records',
+            eventName: 'INSERT',
+            dynamodb: {
+              some: 'thing',
+            },
+          },
+        ],
+      };
+
+      jest.spyOn(console, 'error');
+      await edhMarshaller(event, ctx, () => { return; });
+
+      expect(console.error).toHaveBeenCalledWith(`Unable to generate SQS event for record: ${JSON.stringify(event.Records[0])}, no eventID within payload`);
+    });
+  });
+
+  describe('if record has no eventSourceARN', () => {
+    it('should log an error', async () => {
+      const event = {
+        Records: [
+          {
+            eventID: '2222',
+            eventName: 'INSERT',
+            dynamodb: {
+              some: 'thing',
+            },
+          },
+        ],
+      };
+
+      jest.spyOn(console, 'error');
+      await edhMarshaller(event, ctx, () => { return; });
+
+      expect(console.error).toHaveBeenCalledWith(`Unable to generate SQS event for record: ${JSON.stringify(event.Records[0])} eventSourceArn must be defined`);
+    });
+  });
+
+  describe('if record has an unsupported eventSourceARN', () => {
+    it('should log an error', async () => {
+      const event = {
+        Records: [
+          {
+            eventID: '2222',
+            eventSourceARN: 'unsupported source',
+            eventName: 'INSERT',
+            dynamodb: {
+              some: 'thing',
+            },
+          },
+        ],
+      };
+
+      jest.spyOn(console, 'error');
+      await edhMarshaller(event, ctx, () => { return; });
+
+      expect(console.error).toHaveBeenCalledWith(`Unable to retrieve destination SQS queue URL for record: ${JSON.stringify(event.Records[0])}`);
+    });
+  });
+
   describe('with good flat-tech-records event', () => {
     const flatTechEvent = {
       Records: [
