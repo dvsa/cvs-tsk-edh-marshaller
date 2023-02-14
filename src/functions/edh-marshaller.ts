@@ -47,7 +47,7 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<Batch
       }),
     );
   }
-  
+
   for (const record of records) {
     if (!record.eventID) {
       console.error(`Unable to generate SQS event for record: ${JSON.stringify(record)}, no eventID within payload`);
@@ -81,7 +81,7 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<Batch
 };
 
 const getSqsParams = (record: DynamoDBRecord): SendMessageRequest | undefined => {
-  if (!record.eventSourceARN) { 
+  if (!record.eventSourceARN) {
     console.error(`Unable to generate SQS event for record: ${JSON.stringify(record)} eventSourceArn must be defined`);
     return undefined;
   }
@@ -91,17 +91,7 @@ const getSqsParams = (record: DynamoDBRecord): SendMessageRequest | undefined =>
   if (record.eventSourceARN.includes('test-results')) {
     queueUrl = process.env.TEST_RESULT_UPDATE_STORE_SQS_URL;
   } else if (record.eventSourceARN.includes('flat-tech-records')) {
-    if (process.env.PROCESS_FLAT_TECH_RECORDS != 'true') {
-      console.log('Ignoring flat-tech-record stream event');
-      return undefined;
-    }
     transformTechRecord(record);
-    queueUrl = process.env.TECHNICAL_RECORDS_UPDATE_STORE_SQS_URL;
-  } else if (record.eventSourceARN.includes('technical-records')) {
-    if (process.env.PROCESS_FLAT_TECH_RECORDS == 'true') {
-      console.log('Ignoring technical-record stream event');
-      return undefined;
-    }
     queueUrl = process.env.TECHNICAL_RECORDS_UPDATE_STORE_SQS_URL;
   }
 
@@ -114,7 +104,6 @@ const getSqsParams = (record: DynamoDBRecord): SendMessageRequest | undefined =>
     MessageBody: JSON.stringify(record),
     QueueUrl: queueUrl,
   };
-  
 };
 
 export { edhMarshaller };

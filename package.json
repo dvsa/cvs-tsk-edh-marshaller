@@ -24,7 +24,7 @@
     "security-checks": "git secrets --scan",
     "audit": "npm audit",
     "package": "mkdir ${ZIP_NAME} && cp package.json package-lock.json ${ZIP_NAME}/ && cp -r .build/src/* ${ZIP_NAME}/ && cd ${ZIP_NAME} && npm ci --production && rm package.json package-lock.json && zip -qr ../${ZIP_NAME}.zip .",
-    "tools-setup": "echo \"Nothing To Do\""
+    "tools-setup": "echo 'nothing to do'"
   },
   "nyc": {
     "include": [
@@ -57,8 +57,8 @@
     "@commitlint/config-conventional": "^16.2.4",
     "@dvsa/eslint-config-ts": "^2.4.0",
     "@types/aws-lambda": "^8.10.97",
-    "@types/jest": "^29.2.5",
-    "@types/jest-plugin-context": "^2.9.2",
+    "@types/jest": "^29.4.0",
+    "@types/jest-plugin-context": "^2.9.5",
     "@types/node": "^16.11.33",
     "@typescript-eslint/eslint-plugin": "^5.23.0",
     "@typescript-eslint/parser": "^5.23.0",
@@ -70,7 +70,7 @@
     "eslint-plugin-jest": "^26.1.5",
     "eslint-plugin-security": "^1.5.0",
     "husky": "^8.0.1",
-    "jest": "^28.1.0",
+    "jest": "^29.4.2",
     "jest-plugin-context": "^2.9.0",
     "jest-sonar-reporter": "^2.0.0",
     "prettier": "^2.3.2",
