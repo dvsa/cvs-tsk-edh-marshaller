@@ -322,10 +322,10 @@ const dbRecordOld: DynamoDBRecord = {
               'euroStandard': {
                 'S': '7',
               },
-              'frontAxleTo5thWheelCouplingMax': {
+              'frontVehicleTo5thWheelCouplingMax': {
                 'N': '1900',
               },
-              'frontAxleTo5thWheelCouplingMin': {
+              'frontVehicleTo5thWheelCouplingMin': {
                 'N': '1700',
               },
               'frontAxleTo5thWheelMax': {
@@ -663,10 +663,10 @@ const dbRecordNew: DynamoDBRecord = {
       'techRecord_euroStandard': {
         'S': '7',
       },
-      'techRecord_frontAxleTo5thWheelCouplingMax': {
+      'techRecord_frontVehicleTo5thWheelCouplingMax': {
         'N': '1900',
       },
-      'techRecord_frontAxleTo5thWheelCouplingMin': {
+      'techRecord_frontVehicleTo5thWheelCouplingMin': {
         'N': '1700',
       },
       'techRecord_frontAxleTo5thWheelMax': {
