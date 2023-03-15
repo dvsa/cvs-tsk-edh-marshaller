@@ -44,6 +44,9 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<Batch
       new SQS({
         region: 'eu-west-1',
         apiVersion: '2012-11-05',
+        httpOptions: {
+          timeout: 5000,
+        },
       }),
     );
   }
@@ -68,7 +71,8 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<Batch
     sendMessagePromises.push(
       sqs.sendMessage(params).promise()
         .then(() => debugOnlyLog('Succesfully sent SQS message'))
-        .catch(() => {
+        .catch((err) => {
+          console.error(JSON.stringify(err));
           console.error(`Failed to push SQS message for record: ${JSON.stringify(record)}`);
           res.batchItemFailures.push({ itemIdentifier: id });
         }),
