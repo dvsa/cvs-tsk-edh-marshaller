@@ -4,11 +4,11 @@ import {
   Handler,
 } from 'aws-lambda';
 import { SQS } from 'aws-sdk';
-import AWSXray from 'aws-xray-sdk';
 import { SendMessageRequest } from 'aws-sdk/clients/sqs';
-import { debugOnlyLog } from '../utils/utilities';
-import { transformTechRecord } from '../utils/transform-tech-record';
+import AWSXray from 'aws-xray-sdk';
 import { BatchItemFailuresResponse } from '../models/BatchItemFailures';
+import { transformTechRecord } from '../utils/transform-tech-record';
+import { debugOnlyLog } from '../utils/utilities';
 
 let sqs: SQS;
 
@@ -30,7 +30,7 @@ const edhMarshaller: Handler = async (event: DynamoDBStreamEvent): Promise<Batch
 
   const records: DynamoDBRecord[] = event.Records;
 
-  if (!records || !records.length) {
+  if (!records?.length) {
     console.error('ERROR: No Records in event: ', event);
     return res;
   }

@@ -4,12 +4,12 @@ handles update requests destined for EDH and pipes them to SQS queues.
 
 ## Dependencies
 
-The project runs on node >10 with typescript and serverless framework. For further details about project dependencies, please refer to the `package.json` file.
+The project runs on node >18 with typescript and serverless framework. For further details about project dependencies, please refer to the `package.json` file.
 [nvm](https://github.com/nvm-sh/nvm/blob/master/README.md) is used to managed node versions and configuration explicitly done per project using an `.npmrc` file.
 
 ### Prerequisites
 
-Please install and run the following securiy programs as part of your development process:
+Please install and run the following security programs as part of your development process:
 
 - [git-secrets](https://github.com/awslabs/git-secrets)
   After installing, do a one-time set up with `git secrets --register-aws`. Run with `git secrets --scan`.
