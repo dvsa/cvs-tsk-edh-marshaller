@@ -49,7 +49,7 @@
   "license": "ISC",
   "dependencies": {
     "aws-lambda": "^1.0.7",
-    "aws-sdk": "^2.1132.0",
+    "aws-sdk": "^2.1613.0",
     "aws-xray-sdk": "^3.3.5"
   },
   "devDependencies": {
